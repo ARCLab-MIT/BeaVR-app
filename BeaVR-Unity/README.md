@@ -1,6 +1,6 @@
 # BeaVR-Unity
 
-This Unity project runs on **Unity version 2021.3.45f**. It provides a 2D VR experience that streams hand-tracking data, camera feeds, and graph data over a network. The primary visualization includes hand keypoints, which indicate the status of the connection by mirroring hand movements.
+This Unity project, built on Unity 2021.3.45f, provides a VR-based motion tracking experience. It streams real-time hand-tracking data, camera feeds, and graphical data over a network, and simultaneously receives image streams for direct display on a 2D projection. The primary visualization includes hand keypoints, which indicate the status of the connection by mirroring hand movements.
 
 ---
 
