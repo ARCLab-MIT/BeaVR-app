@@ -81,7 +81,8 @@ This Unity project runs on **Unity version 2021.3.45f**. It provides a 2D VR exp
 ## Usage
 
 1. **Configure IP Address:**
-   - Edit through `FieldInputManager.cs` or Unity’s `PlayerPrefs`.
+   - On the server, run `hostname -I` to obtain the IP address.
+   - Input the obtained IP address directly into the application.
 
 2. **Launching Application:**
    - Shows a menu on startup if no connection is detected.
@@ -95,7 +96,7 @@ This Unity project runs on **Unity version 2021.3.45f**. It provides a 2D VR exp
 ## Troubleshooting
 
 - Verify IP and port configurations.
-- Check network connectivity if menu persists on startup.
+- Check network connectivity if the menu persists on startup.
 
 ---
 
@@ -109,7 +110,7 @@ This Unity project runs on **Unity version 2021.3.45f**. It provides a 2D VR exp
 
 ## License
 
-[Insert License Information Here]
+This project is licensed under the [MIT License](LICENSE).
 
 ---
 
@@ -118,4 +119,3 @@ This Unity project runs on **Unity version 2021.3.45f**. It provides a 2D VR exp
 For support, contributions, or issues:
 - **Email:** [Your Contact Email]
 - **GitHub Issues:** Open an issue directly on GitHub.
-
