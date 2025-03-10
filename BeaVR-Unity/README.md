@@ -110,7 +110,7 @@ To use the latest Oculus Integration package rather than the pre-bundled folder:
 2. **Download Oculus Integration (Deprecated)**:
  - In Unity, go to **Window** → **Package Manager**.
  - In the **Package Manager** window, switch the filter from "In Project" to "My Assets" (top-left corner).
- - Find **Oculus Integration (Deprecated)** or the most current Oculus plugin release from the [Unity Asset Store](https://assetstore.unity.com/packages/tools/integration/oculus-integration-deprecated-82022).
+ - Find **Oculus Integration (Deprecated)** from the [Unity Asset Store](https://assetstore.unity.com/packages/tools/integration/oculus-integration-deprecated-82022).
  - **Download** and then **Import** the integration package into the project.
 
 3. **Complete Setup**:
