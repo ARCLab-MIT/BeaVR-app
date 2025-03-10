@@ -127,14 +127,6 @@ To use the latest Oculus Integration package rather than the pre-bundled folder:
 
 ---
 
-## Future Plans
-
-- Enhanced resolution and streaming settings.
-- Advanced logging and error handling.
-- Multi-user capabilities and additional Unity scenes.
-
----
-
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
