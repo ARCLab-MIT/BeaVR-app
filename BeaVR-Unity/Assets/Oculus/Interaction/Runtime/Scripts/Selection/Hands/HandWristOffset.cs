@@ -1,18 +1,25 @@
-/************************************************************************************
-Copyright : Copyright (c) Facebook Technologies, LLC and its affiliates. All rights reserved.
-
-Your use of this SDK or tool is subject to the Oculus SDK License Agreement, available at
-https://developer.oculus.com/licenses/oculussdk/
-
-Unless required by applicable law or agreed to in writing, the Utilities SDK distributed
-under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
-ANY KIND, either express or implied. See the License for the specific language governing
-permissions and limitations under the License.
-************************************************************************************/
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ * All rights reserved.
+ *
+ * Licensed under the Oculus SDK License Agreement (the "License");
+ * you may not use the Oculus SDK except in compliance with the License,
+ * which is provided at the time of installation or download, or which
+ * otherwise accompanies this software in either electronic or hard copy form.
+ *
+ * You may obtain a copy of the License at
+ *
+ * https://developer.oculus.com/licenses/oculussdk/
+ *
+ * Unless required by applicable law or agreed to in writing, the Oculus SDK
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 using Oculus.Interaction.Input;
 using UnityEngine;
-using UnityEngine.Assertions;
 
 namespace Oculus.Interaction
 {
@@ -22,7 +29,7 @@ namespace Oculus.Interaction
     public class HandWristOffset : MonoBehaviour
     {
         [SerializeField, Interface(typeof(IHand))]
-        private MonoBehaviour _hand;
+        private UnityEngine.Object _hand;
         public IHand Hand { get; private set; }
 
         [SerializeField]
@@ -33,9 +40,9 @@ namespace Oculus.Interaction
         [HideInInspector]
         private Quaternion _rotation = Quaternion.identity;
 
-        [SerializeField, Optional]
-        [HideInInspector]
-        private Transform _relativeTransform;
+        [SerializeField]
+        [Tooltip("Mirrors the rotation offset when the attached Hand is has Left Handedness")]
+        private bool _mirrorLeftRotation = true;
 
         private Pose _cachedPose = Pose.identity;
 
@@ -63,6 +70,18 @@ namespace Oculus.Interaction
             }
         }
 
+        public bool MirrorLeftRotation
+        {
+            get
+            {
+                return _mirrorLeftRotation;
+            }
+            set
+            {
+                _mirrorLeftRotation = value;
+            }
+        }
+
         private static readonly Quaternion LEFT_MIRROR_ROTATION = Quaternion.Euler(180f, 0f, 0f);
 
         protected bool _started = false;
@@ -75,7 +94,7 @@ namespace Oculus.Interaction
         protected virtual void Start()
         {
             this.BeginStart(ref _started);
-            Assert.IsNotNull(Hand);
+            this.AssertField(Hand, nameof(Hand));
             this.EndStart(ref _started);
         }
 
@@ -117,7 +136,7 @@ namespace Oculus.Interaction
 
         public void GetOffset(ref Pose pose, Handedness handedness, float scale)
         {
-            if (handedness == Handedness.Left)
+            if (_mirrorLeftRotation && handedness == Handedness.Left)
             {
                 pose.position = -_offset * scale;
                 pose.rotation = _rotation * LEFT_MIRROR_ROTATION;
@@ -138,7 +157,7 @@ namespace Oculus.Interaction
         #region Inject
         public void InjectHand(IHand hand)
         {
-            _hand = hand as MonoBehaviour;
+            _hand = hand as UnityEngine.Object;
             Hand = hand;
         }
         public void InjectOffset(Vector3 offset)

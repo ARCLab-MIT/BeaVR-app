@@ -1,23 +1,32 @@
-/************************************************************************************
-Copyright : Copyright (c) Facebook Technologies, LLC and its affiliates. All rights reserved.
-
-Your use of this SDK or tool is subject to the Oculus SDK License Agreement, available at
-https://developer.oculus.com/licenses/oculussdk/
-
-Unless required by applicable law or agreed to in writing, the Utilities SDK distributed
-under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
-ANY KIND, either express or implied. See the License for the specific language governing
-permissions and limitations under the License.
-************************************************************************************/
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ * All rights reserved.
+ *
+ * Licensed under the Oculus SDK License Agreement (the "License");
+ * you may not use the Oculus SDK except in compliance with the License,
+ * which is provided at the time of installation or download, or which
+ * otherwise accompanies this software in either electronic or hard copy form.
+ *
+ * You may obtain a copy of the License at
+ *
+ * https://developer.oculus.com/licenses/oculussdk/
+ *
+ * Unless required by applicable law or agreed to in writing, the Oculus SDK
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 using UnityEngine.Assertions;
+using Oculus.Interaction.DebugTree;
 
 namespace Oculus.Interaction.PoseDetection.Debug
 {
-    public class ActiveStateNodeUIHorizontal : MonoBehaviour, IActiveStateNodeUI
+    public class ActiveStateNodeUIHorizontal : MonoBehaviour, INodeUI<IActiveState>
     {
         [SerializeField]
         private RectTransform _childArea;
@@ -41,11 +50,11 @@ namespace Oculus.Interaction.PoseDetection.Debug
 
         public RectTransform ChildArea => _childArea;
 
-        private IActiveStateTreeNode _boundNode;
+        private ITreeNode<IActiveState> _boundNode;
         private bool _isRoot = false;
         private bool _isDuplicate = false;
 
-        public void Bind(IActiveStateTreeNode node, bool isRoot, bool isDuplicate)
+        public void Bind(ITreeNode<IActiveState> node, bool isRoot, bool isDuplicate)
         {
             Assert.IsNotNull(node);
 
@@ -57,27 +66,27 @@ namespace Oculus.Interaction.PoseDetection.Debug
 
         protected virtual void Start()
         {
-            Assert.IsNotNull(_childArea);
-            Assert.IsNotNull(_connectingLine);
-            Assert.IsNotNull(_activeImage);
-            Assert.IsNotNull(_label);
+            this.AssertField(_childArea, nameof(_childArea));
+            this.AssertField(_connectingLine, nameof(_connectingLine));
+            this.AssertField(_activeImage, nameof(_activeImage));
+            this.AssertField(_label, nameof(_label));
         }
 
         protected virtual void Update()
         {
-            _activeImage.color = _boundNode.ActiveState.Active ? _activeColor : _inactiveColor;
+            _activeImage.color = _boundNode.Value.Active ? _activeColor : _inactiveColor;
             _childArea.gameObject.SetActive(_childArea.childCount > 0);
             _connectingLine.gameObject.SetActive(!_isRoot);
         }
 
-        private string GetLabelText(IActiveStateTreeNode node)
+        private string GetLabelText(ITreeNode<IActiveState> node)
         {
             string label = _isDuplicate ? "<i>" : "";
-            if (node.ActiveState is MonoBehaviour mono)
+            if (node.Value is UnityEngine.Object obj)
             {
-                label += mono.gameObject.name + System.Environment.NewLine;
+                label += obj.name + System.Environment.NewLine;
             }
-            label += string.Format(OBJNAME_FORMAT, node.ActiveState.GetType().Name);
+            label += string.Format(OBJNAME_FORMAT, node.Value.GetType().Name);
             return label;
         }
     }

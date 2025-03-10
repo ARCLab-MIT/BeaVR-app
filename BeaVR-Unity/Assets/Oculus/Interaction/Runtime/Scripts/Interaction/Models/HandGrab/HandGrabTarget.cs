@@ -1,14 +1,22 @@
-/************************************************************************************
-Copyright : Copyright (c) Facebook Technologies, LLC and its affiliates. All rights reserved.
-
-Your use of this SDK or tool is subject to the Oculus SDK License Agreement, available at
-https://developer.oculus.com/licenses/oculussdk/
-
-Unless required by applicable law or agreed to in writing, the Utilities SDK distributed
-under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
-ANY KIND, either express or implied. See the License for the specific language governing
-permissions and limitations under the License.
-************************************************************************************/
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ * All rights reserved.
+ *
+ * Licensed under the Oculus SDK License Agreement (the "License");
+ * you may not use the Oculus SDK except in compliance with the License,
+ * which is provided at the time of installation or download, or which
+ * otherwise accompanies this software in either electronic or hard copy form.
+ *
+ * You may obtain a copy of the License at
+ *
+ * https://developer.oculus.com/licenses/oculussdk/
+ *
+ * Unless required by applicable law or agreed to in writing, the Oculus SDK
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 using UnityEngine;
 
@@ -29,47 +37,26 @@ namespace Oculus.Interaction.HandGrab
             Palm
         }
 
-        public ref Pose Pose => ref _pose;
+        private Transform _relativeTo;
+        private HandGrabResult _handGrabResult = new HandGrabResult();
 
-        public HandPose HandPose => _isHandPoseValid ? _handPose : null;
+        public HandPose HandPose => _handGrabResult.HasHandPose ? _handGrabResult.HandPose : null;
 
-        public Pose WorldGrabPose => _relativeTo != null ? _relativeTo.GlobalPose(Pose) : Pose.identity;
-        public HandAlignType HandAlignment => _handAlignment;
+        public Pose GetWorldPoseDisplaced(in Pose offset)
+        {
+            Pose displaced = PoseUtils.Multiply(_handGrabResult.RelativePose, offset);
+            return PoseUtils.GlobalPose(_relativeTo, displaced);
+        }
 
+        public HandAlignType HandAlignment { get; private set; } = HandAlignType.None;
         public GrabAnchor Anchor { get; private set; } = GrabAnchor.None;
 
-        private bool _isHandPoseValid = false;
-        private HandPose _handPose = new HandPose();
-        private Pose _pose;
-
-        private Transform _relativeTo;
-        private HandAlignType _handAlignment;
-
-
-        public void Set(HandGrabTarget other)
-        {
-            Set(other._relativeTo, other._handAlignment, other.HandPose, other._pose, other.Anchor);
-        }
-
-        public void Set(Transform relativeTo, HandAlignType handAlignment, HandPose pose, in Pose snapPoint, GrabAnchor anchor)
+        public void Set(Transform relativeTo, HandAlignType handAlignment, GrabAnchor anchor, HandGrabResult handGrabResult)
         {
             Anchor = anchor;
+            HandAlignment = handAlignment;
             _relativeTo = relativeTo;
-            _handAlignment = handAlignment;
-            _pose.CopyFrom(snapPoint);
-            _isHandPoseValid = pose != null;
-            if (_isHandPoseValid)
-            {
-                _handPose.CopyFrom(pose);
-            }
-        }
-
-        public void Clear()
-        {
-            Anchor = GrabAnchor.None;
-            _isHandPoseValid = false;
-            _relativeTo = null;
-            _handAlignment = HandAlignType.None;
+            _handGrabResult.CopyFrom(handGrabResult);
         }
     }
 }

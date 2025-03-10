@@ -1,13 +1,23 @@
-/************************************************************************************
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ * All rights reserved.
+ *
+ * Licensed under the Oculus SDK License Agreement (the "License");
+ * you may not use the Oculus SDK except in compliance with the License,
+ * which is provided at the time of installation or download, or which
+ * otherwise accompanies this software in either electronic or hard copy form.
+ *
+ * You may obtain a copy of the License at
+ *
+ * https://developer.oculus.com/licenses/oculussdk/
+ *
+ * Unless required by applicable law or agreed to in writing, the Oculus SDK
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-Copyright (c) Facebook Technologies, LLC and its affiliates. All rights reserved.
-
-See SampleFramework license.txt for license terms.  Unless required by applicable law
-or agreed to in writing, the sample code is provided “AS IS” WITHOUT WARRANTIES OR
-CONDITIONS OF ANY KIND, either express or implied.  See the license for specific
-language governing permissions and limitations under the license.
-
-************************************************************************************/
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -16,7 +26,6 @@ using System;
 
 namespace OculusSampleFramework
 {
-
     /// <summary>
     /// The rendering methods swappable via radio buttons
     /// </summary>
@@ -34,19 +43,19 @@ namespace OculusSampleFramework
     /// Press any button: it will cycle  [world geometry Quad]->[overlay layer Quad]->[world geometry cylinder]->[overlay layer cylinder]
     /// On PC, only Quad layer is supported
     /// Press any button: it will cycle  [world geometry Quad]->[overlay layer Quad]
-    /// 
+    ///
     /// You should be able to observe sharper and less aliased image when switch from world geometry to overlay layer.
-    /// 
+    ///
     /// </summary>
     public class OVROverlaySample : MonoBehaviour
     {
-
         bool inMenu;
 
         /// <summary>
         /// The string identifiers for DebugUI radio buttons
         /// </summary>
         const string ovrOverlayID = "OVROverlayID";
+
         const string applicationID = "ApplicationID";
         const string noneID = "NoneID";
 
@@ -54,8 +63,9 @@ namespace OculusSampleFramework
         /// Toggle references
         /// </summary>
         Toggle applicationRadioButton;
+
         Toggle noneRadioButton;
-        
+
         [Header("App vs Compositor Comparison Settings")]
         /// <summary>
         /// The main camera used to calculate reprojected OVROverlay quad
@@ -66,11 +76,12 @@ namespace OculusSampleFramework
         /// The camera used to render UI panels
         /// </summary>
         public GameObject uiCamera;
-        
+
         /// <summary>
         /// The parents of grouped UI panels
         /// </summary>
         public GameObject uiGeoParent;
+
         public GameObject worldspaceGeoParent;
 
         /// <summary>
@@ -87,6 +98,7 @@ namespace OculusSampleFramework
         /// The quad textures to indicate the active rendering method
         /// </summary>
         public Texture applicationLabelTexture;
+
         public Texture compositorLabelTexture;
 
         /// <summary>
@@ -94,6 +106,7 @@ namespace OculusSampleFramework
         /// </summary>
         [Header("Level Loading Sim Settings")]
         public GameObject prefabForLevelLoadSim;
+
         public OVROverlay cubemapOverlay;
         public OVROverlay loadingTextQuadOverlay;
         public float distanceFromCamToLoadText;
@@ -115,10 +128,16 @@ namespace OculusSampleFramework
             DebugUIBuilder.instance.AddButton("Destroy Cubes", TriggerUnload);
             DebugUIBuilder.instance.AddDivider();
             DebugUIBuilder.instance.AddLabel("OVROverlay vs. Application Render Comparison");
-            DebugUIBuilder.instance.AddRadio("OVROverlay", "group", delegate (Toggle t) { RadioPressed(ovrOverlayID, "group", t); }).GetComponentInChildren<Toggle>();
-            applicationRadioButton = DebugUIBuilder.instance.AddRadio("Application", "group", delegate (Toggle t) { RadioPressed(applicationID, "group", t); }).GetComponentInChildren<Toggle>();
-            noneRadioButton = DebugUIBuilder.instance.AddRadio("None", "group", delegate (Toggle t) { RadioPressed(noneID, "group", t); }).GetComponentInChildren<Toggle>();
-        
+            DebugUIBuilder.instance
+                .AddRadio("OVROverlay", "group", delegate(Toggle t) { RadioPressed(ovrOverlayID, "group", t); })
+                .GetComponentInChildren<Toggle>();
+            applicationRadioButton = DebugUIBuilder.instance
+                .AddRadio("Application", "group", delegate(Toggle t) { RadioPressed(applicationID, "group", t); })
+                .GetComponentInChildren<Toggle>();
+            noneRadioButton = DebugUIBuilder.instance
+                .AddRadio("None", "group", delegate(Toggle t) { RadioPressed(noneID, "group", t); })
+                .GetComponentInChildren<Toggle>();
+
             DebugUIBuilder.instance.Show();
 
             // Start with Overlay Quad
@@ -130,7 +149,7 @@ namespace OculusSampleFramework
 
         void Update()
         {
-            // Switch ui display types 
+            // Switch ui display types
             if (OVRInput.GetDown(OVRInput.Button.Two) || OVRInput.GetDown(OVRInput.Button.Start))
             {
                 if (inMenu) DebugUIBuilder.instance.Hide();
@@ -144,10 +163,11 @@ namespace OculusSampleFramework
                 TriggerLoad();
             }
         }
+
         #endregion
 
         #region Private Functions
-        
+
         /// <summary>
         /// Usage: Activate the world geometry and deactivate OVROverlay display
         /// </summary>
@@ -238,9 +258,9 @@ namespace OculusSampleFramework
             float overlayRadius = cameraRenderOverlay.transform.localScale.z;
 
 #if UNITY_ANDROID
-		// Gear VR display panel resolution
-		float hmdPanelResWidth = 2560;
-		float hmdPanelResHeight = 1440;
+            // Gear VR display panel resolution
+            float hmdPanelResWidth = 2560;
+            float hmdPanelResHeight = 1440;
 #else
             // Rift display panel resolution
             float hmdPanelResWidth = 2160;
@@ -250,7 +270,7 @@ namespace OculusSampleFramework
             float singleEyeScreenPhysicalResX = hmdPanelResWidth * 0.5f;
             float singleEyeScreenPhysicalResY = hmdPanelResHeight;
 
-            // Calculate RT Height     
+            // Calculate RT Height
             // screenSizeYInWorld : how much world unity the full screen can cover at overlayQuad's location vertically
             // pixelDensityY: pixels / world unit ( meter )
 
@@ -279,11 +299,11 @@ namespace OculusSampleFramework
                 uiCamera.GetComponent<Camera>().targetTexture.Release();
 
             RenderTexture overlayRT = new RenderTexture(
-                    (int)renderTargetWidth * 2,
-                    (int)renderTargetHeight * 2,
-                    0,
-                    RenderTextureFormat.ARGB32,
-                    RenderTextureReadWrite.sRGB);
+                (int)renderTargetWidth * 2,
+                (int)renderTargetHeight * 2,
+                0,
+                RenderTextureFormat.ARGB32,
+                RenderTextureReadWrite.sRGB);
             Debug.Log("Created RT of resolution w: " + renderTargetWidth + " and h: " + renderTargetHeight);
 
             overlayRT.hideFlags = HideFlags.DontSave;
@@ -293,7 +313,7 @@ namespace OculusSampleFramework
 #if UNITY_5_5_OR_NEWER
             overlayRT.autoGenerateMips = true;
 #else
-		overlayRT.generateMips = true;
+        overlayRT.generateMips = true;
 #endif
             uiCamera.GetComponent<Camera>().targetTexture = overlayRT;
 
@@ -311,6 +331,7 @@ namespace OculusSampleFramework
             {
                 numToPrint++;
             }
+
             Debug.Log("Finished " + numToPrint + " Loops");
             Vector3 playerPos = mainCamera.transform.position;
             playerPos.y = 0.5f;
@@ -344,9 +365,11 @@ namespace OculusSampleFramework
             {
                 DestroyImmediate(spawnedCubes[i]);
             }
+
             spawnedCubes.Clear();
             GC.Collect();
         }
+
         #endregion
 
         #region Debug UI Handlers
@@ -369,6 +392,7 @@ namespace OculusSampleFramework
                 ActivateNone();
             }
         }
+
         #endregion
     }
 }

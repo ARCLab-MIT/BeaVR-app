@@ -1,13 +1,23 @@
-/************************************************************************************
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ * All rights reserved.
+ *
+ * Licensed under the Oculus SDK License Agreement (the "License");
+ * you may not use the Oculus SDK except in compliance with the License,
+ * which is provided at the time of installation or download, or which
+ * otherwise accompanies this software in either electronic or hard copy form.
+ *
+ * You may obtain a copy of the License at
+ *
+ * https://developer.oculus.com/licenses/oculussdk/
+ *
+ * Unless required by applicable law or agreed to in writing, the Oculus SDK
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-Copyright (c) Facebook Technologies, LLC and its affiliates. All rights reserved.
-
-See SampleFramework license.txt for license terms.  Unless required by applicable law
-or agreed to in writing, the sample code is provided “AS IS” WITHOUT WARRANTIES OR
-CONDITIONS OF ANY KIND, either express or implied.  See the license for specific
-language governing permissions and limitations under the license.
-
-************************************************************************************/
 
 using System;
 using UnityEngine;
@@ -34,6 +44,7 @@ namespace OculusSampleFramework
                 RefreshCrosshair();
             }
         }
+
         bool m_inRange;
 
         public bool Targeted
@@ -45,6 +56,7 @@ namespace OculusSampleFramework
                 RefreshCrosshair();
             }
         }
+
         bool m_targeted;
 
         protected override void Start()
@@ -64,12 +76,17 @@ namespace OculusSampleFramework
             {
                 if (isGrabbed) m_crosshair.SetState(GrabbableCrosshair.CrosshairState.Disabled);
                 else if (!InRange) m_crosshair.SetState(GrabbableCrosshair.CrosshairState.Disabled);
-                else m_crosshair.SetState(Targeted ? GrabbableCrosshair.CrosshairState.Targeted : GrabbableCrosshair.CrosshairState.Enabled);
+                else
+                    m_crosshair.SetState(Targeted
+                        ? GrabbableCrosshair.CrosshairState.Targeted
+                        : GrabbableCrosshair.CrosshairState.Enabled);
             }
+
             if (m_materialColorField != null)
             {
                 m_renderer.GetPropertyBlock(m_mpb);
-                if (isGrabbed || !InRange) m_mpb.SetColor(m_materialColorField, m_crosshairManager.OutlineColorOutOfRange);
+                if (isGrabbed || !InRange)
+                    m_mpb.SetColor(m_materialColorField, m_crosshairManager.OutlineColorOutOfRange);
                 else if (Targeted) m_mpb.SetColor(m_materialColorField, m_crosshairManager.OutlineColorHighlighted);
                 else m_mpb.SetColor(m_materialColorField, m_crosshairManager.OutlineColorInRange);
                 m_renderer.SetPropertyBlock(m_mpb);

@@ -1,41 +1,53 @@
-﻿/**************************************************************************************************
- * Copyright : Copyright (c) Facebook Technologies, LLC and its affiliates. All rights reserved.
+﻿/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ * All rights reserved.
  *
- * Your use of this SDK or tool is subject to the Oculus SDK License Agreement, available at
+ * Licensed under the Oculus SDK License Agreement (the "License");
+ * you may not use the Oculus SDK except in compliance with the License,
+ * which is provided at the time of installation or download, or which
+ * otherwise accompanies this software in either electronic or hard copy form.
+ *
+ * You may obtain a copy of the License at
+ *
  * https://developer.oculus.com/licenses/oculussdk/
  *
- * Unless required by applicable law or agreed to in writing, the Utilities SDK distributed
- * under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
- * ANY KIND, either express or implied. See the License for the specific language governing
- * permissions and limitations under the License.
- **************************************************************************************************/
+ * Unless required by applicable law or agreed to in writing, the Oculus SDK
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-using System;
-using Facebook.WitAi;
-using Facebook.WitAi.Windows;
-using Facebook.WitAi.Utilities;
+using Meta.Voice.VSDKHub;
+using Meta.Voice.Hub.Attributes;
+using Meta.Voice.Hub.Interfaces;
+using Meta.WitAi;
 using Oculus.Voice.Utility;
-using UnityEditor;
+using Oculus.Voice;
 using UnityEngine;
 
-namespace Oculus.Voice.Windows
+namespace Meta.Voice
 {
-    public class AboutWindow : WitScriptableWizard
+    [MetaHubPage("About", VoiceHubConstants.CONTEXT_VOICE,  priority: 1000)]
+    public class AboutWindow : IMetaHubPage
     {
-        protected override Texture2D HeaderIcon => VoiceSDKStyles.MainHeader;
-        protected override GUIContent Title => VoiceSDKStyles.AboutTitle;
-        protected override string ButtonLabel => VoiceSDKStyles.Texts.AboutCloseLabel;
-        protected override string ContentSubheaderLabel => string.Empty;
+        private Vector2 _offset;
 
-        protected override void LayoutFields()
+        public void OnGUI()
         {
-            WitEditorUI.LayoutKeyLabel(VoiceSDKStyles.Texts.AboutVoiceSdkVersionLabel, VoiceSDKVersion.VERSION);
-            WitEditorUI.LayoutKeyLabel(VoiceSDKStyles.Texts.AboutWitSdkVersionLabel, WitRequest.WIT_SDK_VERSION);
-            WitEditorUI.LayoutKeyLabel(VoiceSDKStyles.Texts.AboutWitApiVersionLabel, WitRequest.WIT_API_VERSION);
+            Vector2 size;
+            WitEditorUI.LayoutWindow(VoiceSDKStyles.Texts.AboutTitleLabel, null, null, null, OnWindowGUI, ref _offset, out size);
+        }
+
+        private void OnWindowGUI()
+        {
+            WitEditorUI.LayoutKeyLabel(VoiceSDKStyles.Texts.AboutVoiceSdkVersionLabel, VoiceSDKConstants.SdkVersion);
+            WitEditorUI.LayoutKeyLabel(VoiceSDKStyles.Texts.AboutWitSdkVersionLabel, WitConstants.SDK_VERSION);
+            WitEditorUI.LayoutKeyLabel(VoiceSDKStyles.Texts.AboutWitApiVersionLabel, WitConstants.API_VERSION);
 
             GUILayout.Space(16);
 
-            if (GUILayout.Button(VoiceSDKStyles.Texts.AboutTutorialButtonLabel, WitStyles.TextButton))
+            if (WitEditorUI.LayoutTextButton(VoiceSDKStyles.Texts.AboutTutorialButtonLabel))
             {
                 Application.OpenURL(VoiceSDKStyles.Texts.AboutTutorialButtonUrl);
             }

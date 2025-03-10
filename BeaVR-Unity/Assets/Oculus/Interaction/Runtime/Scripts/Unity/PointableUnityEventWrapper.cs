@@ -1,19 +1,26 @@
-﻿/************************************************************************************
-Copyright : Copyright (c) Facebook Technologies, LLC and its affiliates. All rights reserved.
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ * All rights reserved.
+ *
+ * Licensed under the Oculus SDK License Agreement (the "License");
+ * you may not use the Oculus SDK except in compliance with the License,
+ * which is provided at the time of installation or download, or which
+ * otherwise accompanies this software in either electronic or hard copy form.
+ *
+ * You may obtain a copy of the License at
+ *
+ * https://developer.oculus.com/licenses/oculussdk/
+ *
+ * Unless required by applicable law or agreed to in writing, the Oculus SDK
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-Your use of this SDK or tool is subject to the Oculus SDK License Agreement, available at
-https://developer.oculus.com/licenses/oculussdk/
-
-Unless required by applicable law or agreed to in writing, the Utilities SDK distributed
-under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
-ANY KIND, either express or implied. See the License for the specific language governing
-permissions and limitations under the License.
-************************************************************************************/
-
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Assertions;
 using UnityEngine.Events;
-using UnityEngine.Serialization;
 
 namespace Oculus.Interaction
 {
@@ -24,28 +31,33 @@ namespace Oculus.Interaction
     public class PointableUnityEventWrapper : MonoBehaviour
     {
         [SerializeField, Interface(typeof(IPointable))]
-        private MonoBehaviour _pointable;
+        private UnityEngine.Object _pointable;
         private IPointable Pointable;
 
-        [SerializeField]
-        private UnityEvent _whenHover;
-        [SerializeField]
-        private UnityEvent _whenUnhover;
-        [SerializeField]
-        private UnityEvent _whenSelect;
-        [SerializeField]
-        private UnityEvent _whenUnselect;
-        [SerializeField]
-        private UnityEvent _whenMove;
-        [SerializeField]
-        private UnityEvent _whenCancel;
+        private HashSet<int> _pointers;
 
-        public UnityEvent WhenHover => _whenHover;
-        public UnityEvent WhenUnhover => _whenUnhover;
-        public UnityEvent WhenSelect => _whenSelect;
-        public UnityEvent WhenUnselect => _whenUnselect;
-        public UnityEvent WhenMove => _whenMove;
-        public UnityEvent WhenCancel => _whenCancel;
+        [SerializeField]
+        private UnityEvent<PointerEvent> _whenRelease;
+        [SerializeField]
+        private UnityEvent<PointerEvent> _whenHover;
+        [SerializeField]
+        private UnityEvent<PointerEvent> _whenUnhover;
+        [SerializeField]
+        private UnityEvent<PointerEvent> _whenSelect;
+        [SerializeField]
+        private UnityEvent<PointerEvent> _whenUnselect;
+        [SerializeField]
+        private UnityEvent<PointerEvent> _whenMove;
+        [SerializeField]
+        private UnityEvent<PointerEvent> _whenCancel;
+
+        public UnityEvent<PointerEvent> WhenRelease => _whenRelease;
+        public UnityEvent<PointerEvent> WhenHover => _whenHover;
+        public UnityEvent<PointerEvent> WhenUnhover => _whenUnhover;
+        public UnityEvent<PointerEvent> WhenSelect => _whenSelect;
+        public UnityEvent<PointerEvent> WhenUnselect => _whenUnselect;
+        public UnityEvent<PointerEvent> WhenMove => _whenMove;
+        public UnityEvent<PointerEvent> WhenCancel => _whenCancel;
 
         protected bool _started = false;
 
@@ -57,7 +69,8 @@ namespace Oculus.Interaction
         protected virtual void Start()
         {
             this.BeginStart(ref _started);
-            Assert.IsNotNull(Pointable);
+            this.AssertField(Pointable, nameof(Pointable));
+            _pointers = new HashSet<int>();
             this.EndStart(ref _started);
         }
 
@@ -77,27 +90,34 @@ namespace Oculus.Interaction
             }
         }
 
-        private void HandlePointerEventRaised(PointerArgs args)
+        private void HandlePointerEventRaised(PointerEvent evt)
         {
-            switch (args.PointerEvent)
+            switch (evt.Type)
             {
-                case PointerEvent.Hover:
-                    _whenHover.Invoke();
+                case PointerEventType.Hover:
+                    _whenHover.Invoke(evt);
+                    _pointers.Add(evt.Identifier);
                     break;
-                case PointerEvent.Unhover:
-                    _whenUnhover.Invoke();
+                case PointerEventType.Unhover:
+                    _whenUnhover.Invoke(evt);
+                    _pointers.Remove(evt.Identifier);
                     break;
-                case PointerEvent.Select:
-                    _whenSelect.Invoke();
+                case PointerEventType.Select:
+                    _whenSelect.Invoke(evt);
                     break;
-                case PointerEvent.Unselect:
-                    _whenUnselect.Invoke();
+                case PointerEventType.Unselect:
+                    if (_pointers.Contains(evt.Identifier))
+                    {
+                        _whenRelease.Invoke(evt);
+                    }
+                    _whenUnselect.Invoke(evt);
                     break;
-                case PointerEvent.Move:
-                    _whenMove.Invoke();
+                case PointerEventType.Move:
+                    _whenMove.Invoke(evt);
                     break;
-                case PointerEvent.Cancel:
-                    _whenCancel.Invoke();
+                case PointerEventType.Cancel:
+                    _whenCancel.Invoke(evt);
+                    _pointers.Remove(evt.Identifier);
                     break;
             }
         }
@@ -111,7 +131,7 @@ namespace Oculus.Interaction
 
         public void InjectPointable(IPointable pointable)
         {
-            _pointable = pointable as MonoBehaviour;
+            _pointable = pointable as UnityEngine.Object;
             Pointable = pointable;
         }
 
