@@ -1,1 +1,1 @@
-# BeaVR_App
+# BeaVR-App
