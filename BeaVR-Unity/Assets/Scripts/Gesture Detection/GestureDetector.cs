@@ -185,7 +185,7 @@ class GestureDetector : MonoBehaviour
         RightHandDataString = TypeMarker + ":" + RightHandDataString;
 
         client.SendFrame(RightHandDataString);
-        byte[] recievedToken = client.ReceiveFrameBytes();
+        // byte[] recievedToken = client.ReceiveFrameBytes();
     }
 
     public void SendLeftHandData(String TypeMarker)
