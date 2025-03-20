@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
@@ -8,6 +9,7 @@ public class FieldInputManager : MonoBehaviour
     public TMP_Dropdown SecondDropDown;
     public TMP_Dropdown ThirdDropDown;
     public TMP_Dropdown FourthDropDown;
+    public TextMeshProUGUI feedbackText;
 
     private NetworkManager netConfig;
 
@@ -26,7 +28,14 @@ public class FieldInputManager : MonoBehaviour
 
         // Getting the Network Config Updater gameobject
         GameObject netConfGame = GameObject.Find("NetworkConfigsLoader");
-        netConfig = netConfGame.GetComponent<NetworkManager>();
+        if (netConfGame != null)
+        {
+            netConfig = netConfGame.GetComponent<NetworkManager>();
+        }
+
+        // Initialize feedback text
+        if (feedbackText != null)
+            feedbackText.text = "Enter server IP address";
     }
 
     public void getIPAddress()
@@ -37,6 +46,49 @@ public class FieldInputManager : MonoBehaviour
             FourthDropDown.options[FourthDropDown.value].text;
 
         // Change the IP Address
-        netConfig.changeIPAddress(newIPAddress);
+        if (netConfig != null)
+        {
+            // First disconnect any existing connections
+            netConfig.DisconnectAllNetworkComponents();
+            
+            // Update the IP
+            netConfig.changeIPAddress(newIPAddress);
+            
+            // Display feedback message
+            if (feedbackText != null)
+            {
+                feedbackText.text = "Connecting to " + newIPAddress + "...";
+            }
+            
+            // Now explicitly connect
+            netConfig.ConnectAllNetworkComponents();
+            
+            // Schedule a delayed check
+            StartCoroutine(UpdateConnectionStatusAfterDelay(3.0f));
+        }
+    }
+
+    private IEnumerator UpdateConnectionStatusAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        
+        GameObject gestureDetector = GameObject.Find("GestureDetector");
+        if (gestureDetector != null)
+        {
+            GestureDetector detector = gestureDetector.GetComponent<GestureDetector>();
+            if (detector != null)
+            {
+                if (detector.AreAllConnectionsEstablished())
+                {
+                    if (feedbackText != null)
+                        feedbackText.text = "Connected successfully!";
+                }
+                else
+                {
+                    if (feedbackText != null)
+                        feedbackText.text = "Connection failed. Check server and try again.";
+                }
+            }
+        }
     }
 }

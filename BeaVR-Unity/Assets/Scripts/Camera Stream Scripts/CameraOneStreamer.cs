@@ -24,40 +24,81 @@ public class CameraOneStreamer : MonoBehaviour
 
     private void StartImageThread()
     {
-        // Check if communication address is available
-        communicationAddress = netConfig.getCamAddress();
-        bool AddressAvailable = !String.Equals(communicationAddress, "tcp://:");
-
-        if (AddressAvailable)
+        try
         {
-            StartConnection();
-            imageList = new List<byte[]>();
-            imageStreamer = new Thread(getRobotImage);
-            imageStreamer.Start();
+            // Check if communication address is available and not forced to disconnect
+            communicationAddress = netConfig.getCamAddress();
+            bool AddressAvailable = !String.Equals(communicationAddress, "tcp://:");
+            
+            if (AddressAvailable && !netConfig.ForceDisconnect)
+            {
+                StartConnection();
+                imageList = new List<byte[]>();
+                imageStreamer = new Thread(getRobotImage);
+                imageStreamer.Start();
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Error starting camera thread: " + e.Message);
         }
     }
 
     public void StartConnection()
     {
-        // Initiate Subscriber Socket
-        socket = new SubscriberSocket();
-        socket.Options.ReceiveHighWatermark = 1000;
-        socket.Connect(communicationAddress);
-        socket.Subscribe("");
-        connectionEstablished = true;
+        try
+        {
+            // Clean up any existing socket first
+            if (socket != null)
+            {
+                socket.Close();
+                socket.Dispose();
+            }
+            
+            // Initiate Subscriber Socket
+            socket = new SubscriberSocket();
+            socket.Options.ReceiveHighWatermark = 1000;
+            socket.Connect(communicationAddress);
+            socket.Subscribe("");
+            connectionEstablished = true;
+            Debug.Log("Camera connection established to: " + communicationAddress);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Error establishing camera connection: " + e.Message);
+            connectionEstablished = false;
+        }
     }
 
     private void getRobotImage()
     {
-        while (true)
+        try
         {
-            byte[] imageBytes = socket.ReceiveFrameBytes();
-            imageList.Add(imageBytes);
-
-            if (imageList.Count > 5)
+            while (true)
             {
-                imageList.RemoveAt(0);
+                // Exit thread if socket is null or Component is disabled
+                if (socket == null || !enabled) break;
+                
+                byte[] imageBytes = socket.ReceiveFrameBytes();
+                
+                if (imageList != null)
+                {
+                    imageList.Add(imageBytes);
+                    
+                    if (imageList.Count > 5)
+                    {
+                        imageList.RemoveAt(0);
+                    }
+                }
+                else
+                {
+                    break;
+                }
             }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Camera thread error: " + e.Message);
         }
     }
 
@@ -65,7 +106,15 @@ public class CameraOneStreamer : MonoBehaviour
     {
         // Getting the Network Config Updater gameobject
         GameObject netConfGame = GameObject.Find("NetworkConfigsLoader");
-        netConfig = netConfGame.GetComponent<NetworkManager>();
+        if (netConfGame != null)
+        {
+            netConfig = netConfGame.GetComponent<NetworkManager>();
+        }
+        else
+        {
+            Debug.LogError("NetworkConfigsLoader not found!");
+            return;
+        }
 
         // Initializing the image texture
         texture = new Texture2D(640, 360, TextureFormat.RGB24, false);
@@ -76,20 +125,93 @@ public class CameraOneStreamer : MonoBehaviour
     {
         if (connectionEstablished)
         {
+            // Check if network manager is forcing disconnect
+            if (netConfig.ForceDisconnect)
+            {
+                DisconnectNetMQ();
+                return;
+            }
+            
             // To check if the same IP is being used
             if (String.Equals(communicationAddress, netConfig.getCamAddress()))
             {
-                // Getting the image from the queue and displaying it
-                byte[] imageBytes = imageList[imageList.Count - 1];
-                texture.LoadImage(imageBytes);
+                // Check if the list has any elements before trying to access them
+                if (imageList != null && imageList.Count > 0)
+                {
+                    try
+                    {
+                        // Getting the image from the queue and displaying it
+                        byte[] imageBytes = imageList[imageList.Count - 1];
+                        texture.LoadImage(imageBytes);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogError("Error updating camera texture: " + e.Message);
+                    }
+                }
             }
             else
             {
-                // Aborting the queue
-                imageStreamer.Abort();
-                connectionEstablished = false;
+                // Address changed, disconnect and reconnect
+                DisconnectNetMQ();
             }
-        } else
+        }
+        else if (!netConfig.ForceDisconnect)
+        {
+            StartImageThread();
+        }
+    }
+    
+    // Add these methods for NetworkManager integration
+    void OnDestroy()
+    {
+        DisconnectNetMQ();
+    }
+
+    void OnApplicationQuit()
+    {
+        DisconnectNetMQ();
+    }
+
+    public void DisconnectNetMQ()
+    {
+        // Safely stop the thread
+        if (imageStreamer != null && imageStreamer.IsAlive)
+        {
+            try
+            {
+                imageStreamer.Abort();
+                imageStreamer = null;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("Error stopping camera thread: " + e.Message);
+            }
+        }
+        
+        // Close socket
+        if (socket != null)
+        {
+            try
+            {
+                socket.Close();
+                socket.Dispose();
+                socket = null;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("Error closing camera socket: " + e.Message);
+            }
+        }
+        
+        connectionEstablished = false;
+        Debug.Log("Camera connection closed");
+    }
+
+    public void ConnectNetMQ()
+    {
+        // Only reconnect if we're not already connected
+        if (!connectionEstablished)
         {
             StartImageThread();
         }

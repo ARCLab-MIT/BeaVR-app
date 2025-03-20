@@ -35,6 +35,20 @@ public class NetworkManager : MonoBehaviour
     // To indicate no IP
     private bool IPNotFound;
 
+    private bool _forceDisconnect = false;
+    public bool ForceDisconnect 
+    {
+        get { return _forceDisconnect; }
+        set 
+        {
+            _forceDisconnect = value;
+            if (value) {
+                // Signal all components to disconnect
+                BroadcastMessage("DisconnectNetMQ", SendMessageOptions.DontRequireReceiver);
+            }
+        }
+    }
+
     public string getRightKeypointAddress()
     {
         if (IPNotFound)
@@ -129,5 +143,32 @@ public class NetworkManager : MonoBehaviour
             IPDisplay.text = "IP Address: " + netConfig.IPAddress;
         else
             IPDisplay.text = "IP Address: Not Specified";
+    }
+
+    public void UpdateConnectionFeedback(string message)
+    {
+        GameObject fieldInputManager = GameObject.Find("FieldInputManager");
+        if (fieldInputManager != null)
+        {
+            FieldInputManager inputManager = fieldInputManager.GetComponent<FieldInputManager>();
+            if (inputManager != null && inputManager.feedbackText != null)
+            {
+                inputManager.feedbackText.text = message;
+            }
+        }
+    }
+
+    public void ConnectAllNetworkComponents()
+    {
+        _forceDisconnect = false;
+        BroadcastMessage("ConnectNetMQ", SendMessageOptions.DontRequireReceiver);
+        UpdateConnectionFeedback("Attempting to connect...");
+    }
+
+    public void DisconnectAllNetworkComponents()
+    {
+        _forceDisconnect = true;
+        BroadcastMessage("DisconnectNetMQ", SendMessageOptions.DontRequireReceiver);
+        UpdateConnectionFeedback("Network connections closed");
     }
 }
