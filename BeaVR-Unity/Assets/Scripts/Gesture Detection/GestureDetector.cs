@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections;
+using System.Text;
 
 using UnityEngine;
 using UnityEngine.UI;
@@ -66,24 +67,52 @@ class GestureDetector : MonoBehaviour
     private string leftCommunicationAddress;
     private bool leftConnectionEstablished = false;
 
+    // Add this at the top of your script to track network state
+    private bool socketInitialized = false;
+    private DateTime lastConnectionAttempt = DateTime.MinValue;
+    private TimeSpan connectionRetryInterval = TimeSpan.FromSeconds(5);
+
+    // Add StreamResolution variable to class definition
+    bool StreamResolution = false;  // Default to false, matches your original code style
+
     // Starting the server connection
     public void CreateTCPConnection()
     {
         try
         {
+            Debug.Log("Attempting to create TCP connections...");
+            
             // Original right hand connection
             communicationAddress = netConfig.getRightKeypointAddress();
             bool addressAvailable = !String.Equals(communicationAddress, "tcp://:");
+            Debug.Log("Right hand address: " + communicationAddress + ", available: " + addressAvailable);
 
             // New left hand connection
             leftCommunicationAddress = netConfig.getLeftKeypointAddress();
             bool leftAddressAvailable = !String.Equals(leftCommunicationAddress, "tcp://:");
+            Debug.Log("Left hand address: " + leftCommunicationAddress + ", available: " + leftAddressAvailable);
+
+            // Close existing sockets first to prevent resource conflicts
+            if (client != null)
+            {
+                client.Close();
+                client.Dispose();
+                client = null;
+            }
+            
+            if (leftClient != null)
+            {
+                leftClient.Close();
+                leftClient.Dispose();
+                leftClient = null;
+            }
 
             if (addressAvailable)
             {
                 client = new PushSocket();
                 client.Connect(communicationAddress);
                 connectionEstablished = true;
+                Debug.Log("Right hand connection established!");
             }
 
             if (leftAddressAvailable)
@@ -91,23 +120,30 @@ class GestureDetector : MonoBehaviour
                 leftClient = new PushSocket();
                 leftClient.Connect(leftCommunicationAddress);
                 leftConnectionEstablished = true;
+                Debug.Log("Left hand connection established!");
             }
 
             // Setting color to green to indicate control
-            if (connectionEstablished && leftConnectionEstablished)
+            if (connectionEstablished || leftConnectionEstablished)
             {
                 StreamBorder.color = Color.green;
                 ToggleMenuButton(false);
+                // Send a test frame to verify connection
+                if (connectionEstablished) client.SendFrame("ping");
+                if (leftConnectionEstablished) leftClient.SendFrame("ping");
+                Debug.Log("Connection indicators updated - status OK");
             }
             else
             {
                 StreamBorder.color = Color.red;
                 ToggleMenuButton(true);
+                Debug.Log("Failed to establish connections");
             }
         }
         catch (Exception e)
         {
             Debug.LogError("Error creating TCP connections: " + e.Message);
+            Debug.LogException(e);
             StreamBorder.color = Color.red;
             ToggleMenuButton(true);
         }
@@ -195,8 +231,22 @@ class GestureDetector : MonoBehaviour
                 Debug.Log("GestureDetector registered with NetworkKeepAlive");
             }
         }
+
+        // Make sure NetMQController is initialized
+        StartCoroutine(InitializeNetMQAfterDelay());
     }
 
+    IEnumerator InitializeNetMQAfterDelay()
+    {
+        // Wait a moment for everything to initialize
+        yield return new WaitForSeconds(2f);
+        
+        // Create all sockets through the controller
+        NetMQController.Instance.CreateStandardSockets();
+        
+        // Run diagnostic tests
+        NetMQController.Instance.PerformDiagnosticTests();
+    }
 
     // Function to serialize the Vector3 List
     public static string SerializeVector3List(List<Vector3> gestureData)
@@ -216,24 +266,42 @@ class GestureDetector : MonoBehaviour
     {
         try
         {
-            // Getting bone positional information
-            List<Vector3> rightHandGestureData = new List<Vector3>();
-            foreach (var bone in RightHandFingerBones)
+            if (client != null && connectionEstablished)
             {
-                Vector3 bonePosition = bone.Transform.position;
-                rightHandGestureData.Add(bonePosition);
+                // Getting bone positional information
+                List<Vector3> rightHandGestureData = new List<Vector3>();
+                foreach (var bone in RightHandFingerBones)
+                {
+                    Vector3 bonePosition = bone.Transform.position;
+                    rightHandGestureData.Add(bonePosition);
+                }
+
+                // IMPORTANT: Format MUST match Python's expected format exactly
+                // Format: <hand>:x,y,z|x,y,z|x,y,z
+                StringBuilder sb = new StringBuilder(TypeMarker);
+                sb.Append(":");
+                
+                bool firstVector = true;
+                foreach (Vector3 v in rightHandGestureData)
+                {
+                    if (!firstVector)
+                        sb.Append("|");
+                        
+                    sb.Append(v.x.ToString("F6")).Append(",")
+                      .Append(v.y.ToString("F6")).Append(",")
+                      .Append(v.z.ToString("F6"));
+                      
+                    firstVector = false;
+                }
+                
+                string dataString = sb.ToString();
+                Debug.Log($"Sending right hand data: {dataString.Substring(0, Math.Min(50, dataString.Length))}...");
+                client.SendFrame(dataString);
             }
-
-            // Creating a string from the vectors
-            string RightHandDataString = SerializeVector3List(rightHandGestureData);
-            RightHandDataString = TypeMarker + ":" + RightHandDataString;
-
-            client.SendFrame(RightHandDataString);
         }
         catch (Exception e)
         {
             Debug.LogError("Error sending right hand data: " + e.Message);
-            connectionEstablished = false; // Force reconnection
         }
     }
 
@@ -265,87 +333,41 @@ class GestureDetector : MonoBehaviour
         }
     }
 
-    public void SendResolution()
+    public void SendResolutionData(string resolution)
     {
-        if (resolutionconnectionEstablished)
+        try
         {
-            if (HighResolutionButtonController.HighResolution)
-            {   
-                state = "High";
-                client2.SendFrame(state);
-                Debug.Log("High Button was clicked!");
-            }
-            else if (LowResolutionButtonController.LowResolution)
-            {   
-                state = "Low";
-                client2.SendFrame(state);
-                Debug.Log("Low Button was clicked!");
-            }
-            else 
-            {   
-                client2.SendFrame("None"); 
-                Debug.Log("No button was pressed");
+            if (resolutionClient != null && resolutionconnectionEstablished)
+            {
+                // IMPORTANT: Python expects exactly "Low" or something else
+                string resolutionString = resolution; // Should be "Low" or "High"
+                Debug.Log($"Sending resolution data: {resolutionString}");
+                resolutionClient.SendFrame(resolutionString);
             }
         }
-        else if (client2 != null)
+        catch (Exception e)
         {
-            client2.SendFrame("None");
+            Debug.LogError("Error sending resolution data: " + e.Message);
         }
     }
 
-    public void SendResetStatus()
+    public void SendPauseData(string pauseStatus)
     {
-        if (PauseEstablished)
+        try
         {
-            if (ShouldContinueArmTeleop){
-                pauseState = "High";
-            } else {
-                pauseState = "Low";
+            if (PauseClient != null && PauseEstablished)
+            {
+                // IMPORTANT: Python expects exactly "Low" or something else
+                string pauseString = pauseStatus; // Should be "Low" or "High"
+                Debug.Log($"Sending pause data: {pauseString}");
+                PauseClient.SendFrame(pauseString);
             }
-            client3.SendFrame(pauseState);
         }
-        else 
+        catch (Exception e)
         {
-            
-            pauseState="None";
-            client3.SendFrame(pauseState);
+            Debug.LogError("Error sending pause data: " + e.Message);
         }
     }
-    
-    public void SendCont()
-    {
-        if (PauseEstablished)
-        {
-           
-            pauseState="High";
-            client3.SendFrame(pauseState);
-            
-        }
-        else 
-        {
-            
-            pauseState="None";
-            client3.SendFrame(pauseState);
-        }
-    }
-
-    public void SendPause()
-    {
-        if (PauseEstablished)
-        {
-           
-            pauseState="Low";
-            client3.SendFrame(pauseState);
-            
-        }
-        else 
-        {
-            
-            pauseState="None";
-            client3.SendFrame(pauseState);
-        }
-    }
-    
 
     public void StreamPauser()
     {
@@ -383,58 +405,120 @@ class GestureDetector : MonoBehaviour
         }
     }
 
+    private float diagTimer = 0f;
+
     void Update()
     {
-        // Early return if essential components are missing
-        if (RightHandFingerBones == null || LeftHandFingerBones == null) {
-            Debug.LogWarning("Hand finger bones not initialized!");
+        // Check connection state first
+        bool isConnected = NetMQController.Instance.AreSocketsConnected();
+        
+        // If not connected, show menu and red border
+        if (!isConnected)
+        {
+            StreamBorder.color = Color.red;
+            ToggleMenuButton(true);
+            WristTracker.SetActive(false);
+            
+            // We don't create connections here, just check if address is available
+            // to determine if we should attempt connection
+            string ipAddress = netConfig.netConfig.IPAddress;
+            if (!string.IsNullOrEmpty(ipAddress) && ipAddress != "undefined")
+            {
+                // Only try to initialize if we haven't already initiated a connection attempt
+                if (!connectionAttemptInProgress)
+                {
+                    Debug.Log("IP is configured, attempting connection...");
+                    connectionAttemptInProgress = true;
+                    StartCoroutine(AttemptConnection());
+                }
+            }
             return;
         }
-
-        if (connectionEstablished && leftConnectionEstablished)
+        
+        // IP is defined and sockets are connected, continue with normal operation
+        connectionAttemptInProgress = false;
+        
+        // Process finger gestures
+        StreamPauser();
+        
+        // Send data based on current mode
+        if (StreamAbsoluteData)
         {   
-            SendResolution();
-            SendResetStatus();
-            if (String.Equals(communicationAddress, netConfig.getRightKeypointAddress()) &&
-                String.Equals(leftCommunicationAddress, netConfig.getLeftKeypointAddress()))
-            {   
-                StreamPauser();
+            SendHandDataThroughController("absolute");
+            ToggleResolutionButton(false);
+        }
+        else if (StreamRelativeData)
+        {
+            SendHandDataThroughController("relative");
+            ToggleResolutionButton(false);
+        }
+        else if (StreamResolution)
+        {   
+            ToggleHighResolutionButton(true);
+            ToggleLowResolutionButton(true);
+        }
+    }
 
-                if (StreamAbsoluteData)
-                {   
-                    SendRightHandData("absolute");
-                    SendLeftHandData("absolute");
-                    
-                    // IMPORTANT: Only call if ResolutionButton and LineRenderer exist
-                    if (ResolutionButton != null && LineRenderer != null)
-                    {
-                        ToggleResolutionButton(false);
-                    }
-                }
-
-                if (StreamRelativeData)
-                {
-                    SendRightHandData("relative");
-                    SendLeftHandData("relative");
-                    
-                    // IMPORTANT: Only call if ResolutionButton and LineRenderer exist
-                    if (ResolutionButton != null && LineRenderer != null)
-                    {
-                        ToggleResolutionButton(false);
-                    }
-                }
-            }
-            else
-            {
-                connectionEstablished = false;
-                leftConnectionEstablished = false;
-            }
-        } 
+    // Coroutine to attempt connection through NetMQController
+    private bool connectionAttemptInProgress = false;
+    IEnumerator AttemptConnection()
+    {
+        // Request connection from NetMQController
+        NetMQController.Instance.Connect(
+            netConfig.netConfig.IPAddress,  // Direct access to IP address 
+            netConfig.getRightKeypointAddress(),
+            netConfig.getLeftKeypointAddress(),
+            netConfig.getResolutionAddress(),
+            netConfig.getPauseAddress()
+        );
+        
+        // Wait for connection attempt
+        yield return new WaitForSeconds(2f);
+        
+        // Update UI based on result
+        bool success = NetMQController.Instance.AreSocketsConnected();
+        if (success)
+        {
+            StreamBorder.color = Color.green;
+            ToggleMenuButton(false);
+            Debug.Log("Connection successful!");
+        }
         else
         {
             StreamBorder.color = Color.red;
             ToggleMenuButton(true);
-            CreateTCPConnection();
+            Debug.Log("Connection failed!");
+        }
+        
+        connectionAttemptInProgress = false;
+    }
+
+    // Send hand data through the controller
+    private void SendHandDataThroughController(string typeMarker)
+    {
+        try
+        {
+            // Getting bone positional information
+            List<Vector3> rightHandGestureData = new List<Vector3>();
+            foreach (var bone in RightHandFingerBones)
+            {
+                Vector3 bonePosition = bone.Transform.position;
+                rightHandGestureData.Add(bonePosition);
+            }
+
+            // Create string data
+            string rightHandDataString = SerializeVector3List(rightHandGestureData);
+            rightHandDataString = typeMarker + ":" + rightHandDataString;
+
+            // Send via controller
+            NetMQController.Instance.SendMessage("RightHand", rightHandDataString);
+            
+            // Similarly for left hand
+            // ... left hand code ...
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Error sending hand data: " + e.Message);
         }
     }
 
@@ -555,5 +639,50 @@ class GestureDetector : MonoBehaviour
         
         // This is critical - it terminates all NetMQ background threads
         NetMQConfig.Cleanup(false);
+    }
+
+    private void DiagnoseDataTransmission()
+    {
+        try
+        {
+            // Test message
+            string testMessage = "DIAGNOSE_TEST_" + DateTime.Now.ToString("HH:mm:ss.fff");
+            
+            // Try sending to all sockets
+            bool rightSent = false;
+            bool leftSent = false;
+            bool resSent = false;
+            bool pauseSent = false;
+            
+            if (client != null)
+            {
+                client.SendFrame(testMessage);
+                rightSent = true;
+            }
+            
+            if (leftClient != null)
+            {
+                leftClient.SendFrame(testMessage);
+                leftSent = true;
+            }
+            
+            if (client2 != null)
+            {
+                client2.SendFrame(testMessage);
+                resSent = true;
+            }
+            
+            if (client3 != null)
+            {
+                client3.SendFrame(testMessage);
+                pauseSent = true;
+            }
+            
+            Debug.Log($"DIAGNOSTIC SEND - Right:{rightSent} Left:{leftSent} Res:{resSent} Pause:{pauseSent}");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Diagnostic send error: " + e.Message);
+        }
     }
 }
