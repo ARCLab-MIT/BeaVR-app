@@ -333,42 +333,6 @@ class GestureDetector : MonoBehaviour
         }
     }
 
-    public void SendResolutionData(string resolution)
-    {
-        try
-        {
-            if (resolutionClient != null && resolutionconnectionEstablished)
-            {
-                // IMPORTANT: Python expects exactly "Low" or something else
-                string resolutionString = resolution; // Should be "Low" or "High"
-                Debug.Log($"Sending resolution data: {resolutionString}");
-                resolutionClient.SendFrame(resolutionString);
-            }
-        }
-        catch (Exception e)
-        {
-            Debug.LogError("Error sending resolution data: " + e.Message);
-        }
-    }
-
-    public void SendPauseData(string pauseStatus)
-    {
-        try
-        {
-            if (PauseClient != null && PauseEstablished)
-            {
-                // IMPORTANT: Python expects exactly "Low" or something else
-                string pauseString = pauseStatus; // Should be "Low" or "High"
-                Debug.Log($"Sending pause data: {pauseString}");
-                PauseClient.SendFrame(pauseString);
-            }
-        }
-        catch (Exception e)
-        {
-            Debug.LogError("Error sending pause data: " + e.Message);
-        }
-    }
-
     public void StreamPauser()
     {
         // Switching from Right hand control
@@ -442,6 +406,9 @@ class GestureDetector : MonoBehaviour
         StreamPauser();
         
         // Send data based on current mode
+        SendResolutionThroughController();
+        SendPauseStatusThroughController();
+        
         if (StreamAbsoluteData)
         {   
             SendHandDataThroughController("absolute");
@@ -493,12 +460,12 @@ class GestureDetector : MonoBehaviour
         connectionAttemptInProgress = false;
     }
 
-    // Send hand data through the controller
+    // Send hand data through the controller - fixed names and data format
     private void SendHandDataThroughController(string typeMarker)
     {
         try
         {
-            // Getting bone positional information
+            // Getting bone positional information for right hand
             List<Vector3> rightHandGestureData = new List<Vector3>();
             foreach (var bone in RightHandFingerBones)
             {
@@ -513,12 +480,63 @@ class GestureDetector : MonoBehaviour
             // Send via controller
             NetMQController.Instance.SendMessage("RightHand", rightHandDataString);
             
-            // Similarly for left hand
-            // ... left hand code ...
+            // Getting bone positional information for left hand if available
+            if (LeftHandFingerBones != null && LeftHandFingerBones.Count > 0)
+            {
+                List<Vector3> leftHandGestureData = new List<Vector3>();
+                foreach (var bone in LeftHandFingerBones)
+                {
+                    Vector3 bonePosition = bone.Transform.position;
+                    leftHandGestureData.Add(bonePosition);
+                }
+
+                // Create string data
+                string leftHandDataString = SerializeVector3List(leftHandGestureData);
+                leftHandDataString = typeMarker + ":" + leftHandDataString;
+
+                // Send via controller
+                NetMQController.Instance.SendMessage("LeftHand", leftHandDataString);
+            }
         }
         catch (Exception e)
         {
             Debug.LogError("Error sending hand data: " + e.Message);
+        }
+    }
+
+    // Send resolution data through the controller with correct variable names
+    private void SendResolutionThroughController()
+    {
+        try {
+            string state = "None";
+            
+            if (HighResolutionButtonController != null && HighResolutionButtonController.HighResolution)
+            {
+                state = "High";
+                Debug.Log("High Resolution Button was clicked!");
+            }
+            else if (LowResolutionButtonController != null && LowResolutionButtonController.LowResolution)
+            {
+                state = "Low";
+                Debug.Log("Low Resolution Button was clicked!");
+            }
+            
+            NetMQController.Instance.SendMessage("Resolution", state);
+        }
+        catch (Exception e) {
+            Debug.LogError("Error sending resolution data: " + e.Message);
+        }
+    }
+
+    // Send pause status through the controller
+    private void SendPauseStatusThroughController()
+    {
+        try {
+            string pauseState = ShouldContinueArmTeleop ? "High" : "Low";
+            NetMQController.Instance.SendMessage("Pause", pauseState);
+        }
+        catch (Exception e) {
+            Debug.LogError("Error sending pause status: " + e.Message);
         }
     }
 

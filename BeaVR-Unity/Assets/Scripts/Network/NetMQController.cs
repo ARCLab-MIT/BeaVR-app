@@ -44,6 +44,8 @@ public class NetMQController : MonoBehaviour
     // Add this at class level
     private float lastLogTime = 0f;
     
+    private Dictionary<string, int> socketFailCounts = new Dictionary<string, int>();
+    
     private void Awake()
     {
         if (_instance != null && _instance != this)
@@ -197,7 +199,7 @@ public class NetMQController : MonoBehaviour
     }
     
     /// <summary>
-    /// Send a message through a named socket
+    /// Send a message through a named socket with timeout protection
     /// </summary>
     public bool SendMessage(string socketName, string message)
     {
@@ -205,26 +207,41 @@ public class NetMQController : MonoBehaviour
         {
             if (!sockets.ContainsKey(socketName))
             {
-                //Debug.LogWarning($"NetMQController: Socket '{socketName}' not found");
                 return false;
             }
 
             var socket = sockets[socketName];
             if (socket == null)
             {
-                //Debug.LogWarning($"NetMQController: Socket '{socketName}' is null");
                 return false;
             }
 
-            // Use SendFrame for text messages
-            socket.SendFrame(message);
+            // Add timeout protection
+            bool sent = socket.TrySendFrame(TimeSpan.FromMilliseconds(10), message);
             
-            // Log message sending occasionally (once per second) to avoid flooding the console
-            // but still provide evidence of ongoing data transmission
+            if (!sent)
+            {
+                // If send times out, mark this socket as potentially disconnected
+                socketFailCounts[socketName] = socketFailCounts.GetValueOrDefault(socketName, 0) + 1;
+                
+                // If we've failed multiple times, try to reconnect this socket
+                if (socketFailCounts[socketName] > 5)
+                {
+                    Debug.LogWarning($"Socket {socketName} has failed multiple times. Attempting reconnection...");
+                    ReconnectSocket(socketName);
+                    socketFailCounts[socketName] = 0;
+                }
+                return false;
+            }
+            
+            // Reset fail count on success
+            socketFailCounts[socketName] = 0;
+            
+            // Occasional logging
             if (Time.time - lastLogTime > 1.0f)
             {
                 lastLogTime = Time.time;
-                Debug.Log($"NetMQController: Sent message to '{socketName}' - message length: {message.Length} chars");
+                Debug.Log($"NetMQController: Sent message to '{socketName}'");
             }
 
             return true;
@@ -232,6 +249,14 @@ public class NetMQController : MonoBehaviour
         catch (Exception e)
         {
             Debug.LogError($"NetMQController: Error sending message to '{socketName}' - {e.Message}");
+            socketFailCounts[socketName] = socketFailCounts.GetValueOrDefault(socketName, 0) + 1;
+            
+            // If exception keeps happening, try to reconnect
+            if (socketFailCounts[socketName] > 3)
+            {
+                ReconnectSocket(socketName);
+                socketFailCounts[socketName] = 0;
+            }
             return false;
         }
     }
@@ -430,6 +455,65 @@ public class NetMQController : MonoBehaviour
         bool hasLeftHand = sockets.ContainsKey("LeftHand") && sockets["LeftHand"] != null;
         
         return hasRightHand && hasLeftHand;
+    }
+
+    /// <summary>
+    /// Attempt to reconnect a specific socket
+    /// </summary>
+    private void ReconnectSocket(string socketName)
+    {
+        try
+        {
+            Debug.Log($"Attempting to reconnect socket: {socketName}");
+            
+            // Close the existing socket
+            if (sockets.ContainsKey(socketName) && sockets[socketName] != null)
+            {
+                sockets[socketName].Close();
+                sockets[socketName].Dispose();
+            }
+            
+            // Determine the address based on socket type
+            string address = "";
+            switch (socketName)
+            {
+                case "RightHand":
+                    address = $"tcp://{ipAddress}:{rightKeypointPort}";
+                    break;
+                case "LeftHand":
+                    address = $"tcp://{ipAddress}:{leftKeypointPort}";
+                    break;
+                case "Resolution":
+                    address = $"tcp://{ipAddress}:{resolutionPort}";
+                    break;
+                case "Pause":
+                    address = $"tcp://{ipAddress}:{pausePort}";
+                    break;
+                default:
+                    Debug.LogError($"Unknown socket type: {socketName}");
+                    return;
+            }
+            
+            // Create new socket
+            var socket = new PushSocket();
+            socket.Options.SendHighWatermark = 1000;
+            socket.Options.Linger = TimeSpan.FromMilliseconds(100);
+            socket.Connect(address);
+            
+            // Replace in dictionary
+            sockets[socketName] = socket;
+            
+            Debug.Log($"Socket {socketName} reconnected to {address}");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Error reconnecting socket {socketName}: {e.Message}");
+            // Mark as broken but don't throw
+            if (sockets.ContainsKey(socketName))
+            {
+                sockets[socketName] = null;
+            }
+        }
     }
 }
 
