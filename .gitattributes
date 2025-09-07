@@ -1,4 +1,3 @@
 BeaVR-Unity/README.md !text !filter !merge !diff
 BeaVR-Unity/Assets/Packages/System.ServiceModel.Primitives.8.1.2/README.md !text !filter !merge !diff
 BeaVR-Unity/Assets/Samples/XR[[:space:]]Hands/1.6.1/HandVisualizer/README.md !text !filter !merge !diff
-* filter=lfs diff=lfs merge=lfs -text
