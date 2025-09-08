@@ -71,8 +71,3 @@ Assets/AssetStoreTools*
 *.psd
 *.mp4
 *.mov
-
-# Optional: keep your source code + configs only
-!Assets/**/*.cs
-!ProjectSettings/**
-!Packages/**

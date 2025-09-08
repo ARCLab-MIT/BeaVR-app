@@ -1,3 +1,28 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:642fe86cb524a28afd8b3790eee472161ed3cf5e24507494f9e0fe2e1967d52f
-size 628
+fileFormatVersion: 2
+guid: 8171423795a7747a488bce2c36b8a5bd
+labels:
+- NuGetForUnity
+PluginImporter:
+  externalObjects: {}
+  serializedVersion: 3
+  iconMap: {}
+  executionOrder: {}
+  defineConstraints: []
+  isPreloaded: 0
+  isOverridable: 0
+  isExplicitlyReferenced: 0
+  validateReferences: 1
+  platformData:
+    Any:
+      enabled: 0
+      settings: {}
+    Editor:
+      enabled: 0
+      settings:
+        DefaultValueInitialized: true
+    WindowsStoreApps:
+      enabled: 0
+      settings: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
