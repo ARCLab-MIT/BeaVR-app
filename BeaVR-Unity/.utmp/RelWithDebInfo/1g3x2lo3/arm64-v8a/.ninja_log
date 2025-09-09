@@ -1,0 +1,23 @@
+# ninja log v5
+29	5345	7790931772116368	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	f34c88b63ffee2ea
+230	921	7790931727898045	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	4972cb89f71ef00f
+923	1375	7790931732166198	C:/MIT/BeaVR-app/BeaVR-Unity/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/1g3x2lo3/obj/arm64-v8a/libswappywrapper.so	f51e88afbf175d1b
+75	4069	7790931759196186	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	32b55bf407fb1af1
+206	4171	7790931760242288	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	42ccb2309fb02f12
+118	4657	7790931765242087	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	c1ea206d206d9556
+46	4213	7790931760453831	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	cb7e81b5ec8c5aca
+96	4427	7790931762953965	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	dcdd724bb21fee39
+141	4277	7790931761439526	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	48d2b2b5fb46a336
+182	5065	7790931769379796	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	1f2e3d7c5f3f9b7d
+5346	5652	7790931775272851	C:/MIT/BeaVR-app/BeaVR-Unity/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/1g3x2lo3/obj/arm64-v8a/libgame.so	eb398eb5f7d12488
+193	1313	7790946221073857	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	4972cb89f71ef00f
+1315	1899	7790946226633660	C:/MIT/BeaVR-app/BeaVR-Unity/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/1g3x2lo3/obj/arm64-v8a/libswappywrapper.so	f51e88afbf175d1b
+107	20895	7790946416711229	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	42ccb2309fb02f12
+41	20905	7790946416811914	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	32b55bf407fb1af1
+66	20993	7790946417780077	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	cb7e81b5ec8c5aca
+171	21020	7790946418022311	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	48d2b2b5fb46a336
+25	21219	7790946420029644	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	dcdd724bb21fee39
+150	21807	7790946425875948	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	1f2e3d7c5f3f9b7d
+129	21993	7790946427771448	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	c1ea206d206d9556
+86	22135	7790946429133584	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	f34c88b63ffee2ea
+22136	22461	7790946432452368	C:/MIT/BeaVR-app/BeaVR-Unity/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/1g3x2lo3/obj/arm64-v8a/libgame.so	eb398eb5f7d12488

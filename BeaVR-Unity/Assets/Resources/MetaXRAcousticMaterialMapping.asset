@@ -11,6 +11,6 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 60e5406209e5ed147bb02ed71f9c40f3, type: 3}
   m_Name: MetaXRAcousticMaterialMapping
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier: Meta.XR.Audio::MetaXRAcousticMaterialMapping
   mapping: []
   fallbackMaterial: {fileID: 0}
