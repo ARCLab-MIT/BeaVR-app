@@ -1,3 +1,23 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:b83bd5edaaecd49934ef22cbaccb5d30781623af792a614b566d8e0f2231f2c8
-size 1098
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>KaitaiStruct.Runtime.CSharp</id>
+    <version>0.10.0</version>
+    <authors>Kaitai.Struct.Runtime</authors>
+    <license type="expression">MIT</license>
+    <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>
+    <icon>icon.png</icon>
+    <projectUrl>http://kaitai.io/</projectUrl>
+    <description>This library implements Kaitai Struct API for C#.</description>
+    <releaseNotes>Update to version 0.10</releaseNotes>
+    <copyright>Copyright © Kaitai Project 2016-2022</copyright>
+    <tags>Kaitai Struct File-Format Binary Protocols</tags>
+    <repository type="git" url="https://github.com/kaitai-io/kaitai_struct_csharp_runtime" commit="04b816f9de191e77712bfd7b97e54f8c7525f20e" />
+    <dependencies>
+      <group targetFramework=".NETFramework4.5" />
+      <group targetFramework=".NETStandard1.3">
+        <dependency id="NETStandard.Library" version="1.6.1" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>

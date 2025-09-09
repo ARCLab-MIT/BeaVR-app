@@ -1,3 +1,85 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:3ce42af0823fff5c94eae7a9971930f2c888f942001597cd850475cf81759a78
-size 2215
+﻿using UnityEngine.UI;
+using System.Collections.Generic;
+using UnityEngine;
+using Unity.XR.CoreUtils;
+
+class Logger
+{
+	private static Text Text;
+
+	//List of strings 
+	private static List<string> Logs = new List<string>();
+
+	// Limit on the number of strings that can be present in the log at a time
+	public static int LogLimit = 5;
+
+
+	// Constructor
+	static Logger()
+	{
+		// Obtain XR camera or fallback to main camera
+		Camera xrCamera = null;
+		var origin = GameObject.FindObjectOfType<XROrigin>();
+		if (origin != null && origin.Camera != null)
+			xrCamera = origin.Camera;
+		if (xrCamera == null)
+			xrCamera = Camera.main;
+
+		Transform parent = xrCamera != null ? xrCamera.transform : null;
+		if (parent == null)
+		{
+			var anchor = new GameObject("LoggerAnchor");
+			parent = anchor.transform;
+		}
+
+		// Creating the Canvas to print the text
+		GameObject goCanvas = new GameObject("Canvas");
+		goCanvas.transform.parent = parent;
+		goCanvas.transform.position = new Vector3(0, -8, 0); 
+		Canvas canvas = goCanvas.AddComponent<Canvas>();
+		canvas.renderMode = RenderMode.WorldSpace;
+		if (xrCamera != null) canvas.worldCamera = xrCamera;
+
+		// Adding a text component to render the logs
+		GameObject goText = new GameObject("Text");
+		goText.transform.parent = goCanvas.transform;
+		goText.transform.position = new Vector3(0, 0, 10);
+		goText.transform.rotation = new Quaternion(0, 0, 0, 0);
+
+		//Formating the text
+		Text = goText.AddComponent<Text>();
+		Text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+		Text.fontSize = 30;
+		Text.color = Color.black;
+
+		// Performing other transforms on the text box
+		RectTransform tr = goText.GetComponent<RectTransform>();
+		tr.localScale = new Vector3(0.01f, 0.01f, 0.01f);
+		tr.sizeDelta = new Vector2(1000, 1000);
+	}
+
+
+	// Function to generate the string to be logged
+	private static void PrintLogs()
+	{
+		string StringToLog = "";
+		foreach (string item in Logs)
+			StringToLog += item + "\n";
+
+		Text.text = StringToLog;
+	}
+
+
+	// Logging function
+	public static void Log(string log)
+	{
+		string StringToLog = log.ToString();
+		Logs.Add(StringToLog);
+
+		// Removing the last string
+		if (Logs.Count > LogLimit)
+			Logs.RemoveAt(0);
+
+		PrintLogs();
+	}
+}

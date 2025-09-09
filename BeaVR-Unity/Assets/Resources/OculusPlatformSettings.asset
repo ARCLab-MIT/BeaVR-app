@@ -1,3 +1,17 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:197dff08d3182b685f5502c25d6c1814ca2200a3dc53498da9d63154fb0bc7b5
-size 473
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3d881e962d099f4a8eb492ef7e9a8c0, type: 3}
+  m_Name: OculusPlatformSettings
+  m_EditorClassIdentifier: 
+  ovrAppID: 
+  ovrMobileAppID: 
+  ovrUseStandalonePlatform: 1

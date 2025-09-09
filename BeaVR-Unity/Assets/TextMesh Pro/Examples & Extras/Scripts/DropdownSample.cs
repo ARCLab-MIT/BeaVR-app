@@ -1,3 +1,19 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:e163035bc080b98e90ef130abc969e8cefa32a630783650e68e724316b359332
-size 507
+﻿using TMPro;
+using UnityEngine;
+
+public class DropdownSample: MonoBehaviour
+{
+	[SerializeField]
+	private TextMeshProUGUI text = null;
+
+	[SerializeField]
+	private TMP_Dropdown dropdownWithoutPlaceholder = null;
+
+	[SerializeField]
+	private TMP_Dropdown dropdownWithPlaceholder = null;
+
+	public void OnButtonClick()
+	{
+		text.text = dropdownWithPlaceholder.value > -1 ? "Selected values:\n" + dropdownWithoutPlaceholder.value + " - " + dropdownWithPlaceholder.value : "Error: Please make a selection";
+	}
+}

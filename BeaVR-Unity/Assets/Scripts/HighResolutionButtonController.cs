@@ -1,3 +1,18 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:901c84f8162c3d9362e6d0f169d8590a1005f79a3c46ee8022a7fb4a4033ddbb
-size 509
+using UnityEngine;
+using UnityEngine.UI;
+
+
+public class HighResolutionButtonController : MonoBehaviour
+{
+    // This variable will be set to true when the button is clicked
+    public bool HighResolution = false;
+    // public LowResolutionButtonController LowResolutionButtonController;
+
+    // Attach this method to the button's OnClick event in the Unity Editor
+    public void OnButtonClick()
+    {
+        HighResolution = true;
+        // LowResolutionButtonController.LowResolution=false;
+    }
+    
+}

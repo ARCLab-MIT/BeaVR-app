@@ -1,3 +1,38 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:cecb8c55090666616ab7d1cd131a0b6a1a39a6b31a53afc5ab524339a7e48686
-size 1131
+using UnityEngine;
+using UnityEngine.XR.Hands.Processing;
+
+namespace UnityEngine.XR.Hands.Samples.VisualizerSample
+{
+    public class JointVisualizer : MonoBehaviour
+    {
+        [SerializeField]
+        GameObject m_JointVisual;
+
+        [SerializeField]
+        Material m_HighFidelityJointMaterial;
+
+        [SerializeField]
+        Material m_LowFidelityJointMaterial;
+
+        bool m_HighFidelityJoint;
+
+        Renderer m_JointRenderer;
+
+        public void NotifyTrackingState(XRHandJointTrackingState jointTrackingState)
+        {
+            bool highFidelityJoint = (jointTrackingState & XRHandJointTrackingState.HighFidelityPose) == XRHandJointTrackingState.HighFidelityPose;
+            if (m_HighFidelityJoint == highFidelityJoint)
+                return;
+
+            m_JointRenderer.material = highFidelityJoint ? m_HighFidelityJointMaterial : m_LowFidelityJointMaterial;
+
+            m_HighFidelityJoint = highFidelityJoint;
+        }
+
+        void Start()
+        {
+            if (m_JointVisual.TryGetComponent<Renderer>(out var jointRenderer))
+                m_JointRenderer = jointRenderer;
+        }
+    }
+}

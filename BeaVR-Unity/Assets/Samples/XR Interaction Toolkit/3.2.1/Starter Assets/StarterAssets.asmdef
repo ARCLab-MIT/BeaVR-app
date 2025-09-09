@@ -1,3 +1,26 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:8f272100b94664142e0a3889e3925cb0ee1f7c4f0a386c5639695ccd44842024
-size 689
+{
+    "name": "Unity.XR.Interaction.Toolkit.Samples.StarterAssets",
+    "rootNamespace": "",
+    "references": [
+        "Unity.InputSystem",
+        "Unity.Mathematics",
+        "Unity.XR.CoreUtils",
+        "Unity.XR.Interaction.Toolkit",
+        "Unity.XR.OpenXR"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.xr.openxr",
+            "expression": "1.6.0",
+            "define": "OPENXR_1_6_OR_NEWER"
+        }
+    ],
+    "noEngineReferences": false
+}

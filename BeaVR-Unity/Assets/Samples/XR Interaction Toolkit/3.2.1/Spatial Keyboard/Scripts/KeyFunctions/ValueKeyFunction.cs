@@ -1,3 +1,18 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:053e4c29d073d43e8b78bca203d8f1f7202f773367633c2d93a4183dcba0116a
-size 705
+#if TEXT_MESH_PRO_PRESENT || (UGUI_2_0_PRESENT && UNITY_6000_0_OR_NEWER)
+namespace UnityEngine.XR.Interaction.Toolkit.Samples.SpatialKeyboard.KeyFunctions
+{
+    /// <summary>
+    /// Key function used to update the keyboard text with a string value.
+    /// </summary>
+    [CreateAssetMenu(fileName = "Value Key Function", menuName = "XR/Spatial Keyboard/Value Key Function", order = 1)]
+    public class ValueKeyFunction : KeyFunction
+    {
+        /// <inheritdoc />
+        public override void ProcessKey(XRKeyboard keyboardContext, XRKeyboardKey key)
+        {
+            if (keyboardContext != null)
+                keyboardContext.UpdateText(key.GetEffectiveCharacter());
+        }
+    }
+}
+#endif

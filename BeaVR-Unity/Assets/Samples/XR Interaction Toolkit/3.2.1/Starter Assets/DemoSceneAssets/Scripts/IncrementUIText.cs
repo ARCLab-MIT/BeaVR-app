@@ -1,3 +1,45 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:56c8569b3d1a8fbaa5f0d913e84df852d9a126549cf4c21cfc657b68b9109bac
-size 1376
+using UnityEngine.UI;
+
+namespace UnityEngine.XR.Interaction.Toolkit.Samples.StarterAssets
+{
+    /// <summary>
+    /// Add this component to a GameObject and call the <see cref="IncrementText"/> method
+    /// in response to a Unity Event to update a text display to count up with each event.
+    /// </summary>
+    public class IncrementUIText : MonoBehaviour
+    {
+        [SerializeField]
+        [Tooltip("The Text component this behavior uses to display the incremented value.")]
+        Text m_Text;
+
+        /// <summary>
+        /// The Text component this behavior uses to display the incremented value.
+        /// </summary>
+        public Text text
+        {
+            get => m_Text;
+            set => m_Text = value;
+        }
+
+        int m_Count;
+
+        /// <summary>
+        /// See <see cref="MonoBehaviour"/>.
+        /// </summary>
+        protected void Awake()
+        {
+            if (m_Text == null)
+                Debug.LogWarning("Missing required Text component reference. Use the Inspector window to assign which Text component to increment.", this);
+        }
+
+        /// <summary>
+        /// Increment the string message of the Text component.
+        /// </summary>
+        public void IncrementText()
+        {
+            m_Count += 1;
+            if (m_Text != null)
+                m_Text.text = m_Count.ToString();
+        }
+    }
+}

@@ -1,3 +1,18 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:4f2341a4d137410b1e8b0aee0e077f3a870f1810460c050d9a8a5a40d898a1a2
-size 693
+#if TEXT_MESH_PRO_PRESENT || (UGUI_2_0_PRESENT && UNITY_6000_0_OR_NEWER)
+namespace UnityEngine.XR.Interaction.Toolkit.Samples.SpatialKeyboard.KeyFunctions
+{
+    /// <summary>
+    /// Key function used to send a key code for the keyboard to process.
+    /// </summary>
+    [CreateAssetMenu(fileName = "Key Code Function", menuName = "XR/Spatial Keyboard/Key Code Key Function", order = 1)]
+    public class KeyCodeFunction : KeyFunction
+    {
+        /// <inheritdoc />
+        public override void ProcessKey(XRKeyboard keyboardContext, XRKeyboardKey key)
+        {
+            if (keyboardContext != null)
+                keyboardContext.ProcessKeyCode(key.keyCode);
+        }
+    }
+}
+#endif

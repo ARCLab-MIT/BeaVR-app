@@ -1,3 +1,11 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:99c1a06a269c5ca1e310af0e014def733e53d67ed4635b049d8b18d246dbbae1
-size 264
+﻿{
+  "IPAddress": "undefined",
+  "rightkeyptPortNum": "8087",
+  "leftkeyptPortNum": "8110",
+  "camPortNum": "10505",
+  "graphPortNum": "15001",
+  "resolutionPortNum": "8095",
+  "PausePortNum": "8100",
+  "LeftPausePortNum": "8107",
+  "RightPausePortNum": "8109"
+}

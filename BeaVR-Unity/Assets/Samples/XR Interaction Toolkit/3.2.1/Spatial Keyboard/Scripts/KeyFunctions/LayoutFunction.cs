@@ -1,3 +1,18 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:e0d7372fe3f685e9134cee0fc7ed3fcca94ca18dfa2c3bf3bec131022920d69f
-size 685
+#if TEXT_MESH_PRO_PRESENT || (UGUI_2_0_PRESENT && UNITY_6000_0_OR_NEWER)
+namespace UnityEngine.XR.Interaction.Toolkit.Samples.SpatialKeyboard.KeyFunctions
+{
+    /// <summary>
+    /// Key function used to update the keyboard layout.
+    /// </summary>
+    [CreateAssetMenu(fileName = "Layout Function", menuName = "XR/Spatial Keyboard/Layout Key Function", order = 1)]
+    public class LayoutFunction : KeyFunction
+    {
+        /// <inheritdoc />
+        public override void ProcessKey(XRKeyboard keyboardContext, XRKeyboardKey key)
+        {
+            if (keyboardContext != null)
+                keyboardContext.UpdateLayout(key.GetEffectiveCharacter());
+        }
+    }
+}
+#endif

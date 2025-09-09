@@ -1,3 +1,35 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:d948e7564b31cf413381b9b5348d2107400df3027340c13347b6f34c8af291f6
-size 672
+using UnityEngine;
+using NetMQ;
+using System;
+
+public class NetMQCleanup : MonoBehaviour
+{
+    private static bool hasCleanedUp = false;
+    
+    public static void SafeCleanup()
+    {
+        try 
+        {
+            if (!hasCleanedUp)
+            {
+                Debug.Log("NetMQ: Performing global cleanup");
+                NetMQConfig.Cleanup(false);
+                hasCleanedUp = true;
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("NetMQ cleanup error: " + e.Message);
+        }
+    }
+    
+    void OnApplicationQuit()
+    {
+        SafeCleanup();
+    }
+    
+    void OnDestroy()
+    {
+        SafeCleanup();
+    }
+} 
