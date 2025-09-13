@@ -1,0 +1,14 @@
+{
+    "name": "EditorTests",
+    "references": [
+        "Assembly-CSharp"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "autoReferenced": true,
+    "overrideReferences": false
+}

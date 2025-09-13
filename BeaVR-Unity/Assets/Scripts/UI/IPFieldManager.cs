@@ -14,6 +14,14 @@ public class IPFieldManager : MonoBehaviour
     [Tooltip("Required: ToastManager reference for this canvas/menu.")]
     public ToastManager toastManager;
 
+    [Header("Debug")]
+    [Tooltip("When enabled, logs raw and normalized IP input for troubleshooting.")]
+    public bool enableDebugLogging = false;
+
+    [Header("Input Options")]
+    [Tooltip("When true, blocks non-digit and non-dot characters at entry time.")]
+    public bool restrictToDigitsAndDot = false;
+
     private void Awake()
     {
         if (ipInput == null)
@@ -28,8 +36,23 @@ public class IPFieldManager : MonoBehaviour
 
     private void OnEnable()
     {
-        // Some TMP versions need explicit setting to submit on return for multi-line;
-        // best practice: set Line Type = Single Line in the inspector.
+        // Enforce single-line behavior at runtime
+        if (ipInput != null)
+        {
+            ipInput.lineType = TMP_InputField.LineType.SingleLine;
+            // Only allow digits and '.' at entry time (optional)
+            if (restrictToDigitsAndDot)
+                ipInput.onValidateInput += ValidateChar;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (ipInput != null)
+        {
+            if (restrictToDigitsAndDot)
+                ipInput.onValidateInput -= ValidateChar;
+        }
     }
 
     
@@ -41,7 +64,21 @@ public class IPFieldManager : MonoBehaviour
     /// <param name="text">The final text from the input field.</param>
     public void OnEndEdit_FromInspector(string text)
     {
-        TryProcessIP(text);
+        if (enableDebugLogging)
+            Debug.Log("[IPFieldManager] OnEndEdit param='" + (text ?? "<null>") + "' field='" + (ipInput != null ? ipInput.text : "<no field>") + "'");
+        string submitted = !string.IsNullOrEmpty(text) ? text : (ipInput != null ? ipInput.text : string.Empty);
+        TryProcessIP(submitted);
+    }
+
+    /// <summary>
+    /// Optional: wire to TMP InputField's On Submit (String) to catch IME Done/Enter.
+    /// </summary>
+    public void OnSubmit_FromInspector(string text)
+    {
+        if (enableDebugLogging)
+            Debug.Log("[IPFieldManager] OnSubmit param='" + (text ?? "<null>") + "' field='" + (ipInput != null ? ipInput.text : "<no field>") + "'");
+        string submitted = !string.IsNullOrEmpty(text) ? text : (ipInput != null ? ipInput.text : string.Empty);
+        TryProcessIP(submitted);
     }
 
     /// <summary>
@@ -61,7 +98,23 @@ public class IPFieldManager : MonoBehaviour
             return;
         }
 
-        string ip = (raw ?? string.Empty).Trim();
+        string original = raw ?? string.Empty;
+        string ip = NormalizeIPv4Input(original);
+
+        if (enableDebugLogging)
+        {
+            Debug.Log($"[IPFieldManager] Raw='{original}' => Normalized='{ip}'");
+        }
+
+        // If user dismissed keyboard with empty text, do not block exit
+        if (string.IsNullOrWhiteSpace(ip))
+        {
+            if (enableDebugLogging)
+                Debug.Log("[IPFieldManager] Empty submit; not showing error or refocusing.");
+            ipInput?.DeactivateInputField();
+            EventSystem.current?.SetSelectedGameObject(null);
+            return;
+        }
 
         if (IsValidIPv4(ip))
         {
@@ -80,19 +133,18 @@ public class IPFieldManager : MonoBehaviour
         else
         {
             // ❌ Invalid
-            if (toastManager != null) toastManager.Error("Invalid IP format. Use IPv4 like 192.168.1.10");
-            else Debug.Log("[Toast] Error: Invalid IP format. Use IPv4 like 192.168.1.10");
-
-            // Keep focus and select all so user can retype quickly
-            ipInput.ActivateInputField();
-            ipInput.Select();
+            string shown = (original ?? string.Empty).Trim();
+            if (toastManager != null) toastManager.Error($"Invalid IP: {shown}");
+            else Debug.Log($"[Toast] Error: Invalid IP: {shown}");
+            // Do not force keyboard to reappear; allow user to dismiss
+            // (Optionally, you could re-focus only if there is text and user prefers)
         }
     }
 
     /// <summary>
     /// Validates IPv4 addresses (0.0.0.0 to 255.255.255.255) without DNS parsing quirks.
     /// </summary>
-    private bool IsValidIPv4(string candidate)
+    public static bool IsValidIPv4(string candidate)
     {
         if (string.IsNullOrWhiteSpace(candidate)) return false;
 
@@ -114,5 +166,67 @@ public class IPFieldManager : MonoBehaviour
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Normalizes raw input into a plain IPv4 candidate string.
+    /// - Trims whitespace
+    /// - Replaces common unicode dot variants with '.'
+    /// - If a port is included (e.g., 1.2.3.4:5555), strips the port
+    /// </summary>
+    public static string NormalizeIPv4Input(string raw)
+    {
+        if (raw == null) return string.Empty;
+        string s = raw.Trim();
+
+        // Strip scheme if present (e.g., http://)
+        int schemeIdx = s.IndexOf("://");
+        if (schemeIdx >= 0)
+        {
+            s = s.Substring(schemeIdx + 3);
+        }
+
+        // Cut off path/query if present
+        int slashIdx = s.IndexOf('/');
+        if (slashIdx >= 0)
+        {
+            s = s.Substring(0, slashIdx);
+        }
+
+        // Drop port if present
+        int colon = s.IndexOf(':');
+        if (colon >= 0)
+        {
+            s = s.Substring(0, colon);
+        }
+
+        // Replace common dot-like characters and separators with '.'
+        char[] dotLikes = new char[] { '。', '．', '・', '·', '∙', '․', '‧', '⋅', '•', '●', '｡', ',', ' ' };
+        for (int i = 0; i < dotLikes.Length; i++)
+        {
+            s = s.Replace(dotLikes[i], '.');
+        }
+
+        // Keep only digits and '.'; remove zero-width and other invisible chars
+        System.Text.StringBuilder sb = new System.Text.StringBuilder(s.Length);
+        for (int i = 0; i < s.Length; i++)
+        {
+            char c = s[i];
+            if (char.IsDigit(c) || c == '.') sb.Append(c);
+        }
+        s = sb.ToString();
+
+        // Collapse consecutive dots and trim
+        while (s.Contains("..")) s = s.Replace("..", ".");
+        s = s.Trim('.');
+
+        return s;
+    }
+
+    private char ValidateChar(string text, int charIndex, char addedChar)
+    {
+        // Allow digits and '.' only
+        if (char.IsDigit(addedChar) || addedChar == '.') return addedChar;
+        return '\0';
     }
 }
