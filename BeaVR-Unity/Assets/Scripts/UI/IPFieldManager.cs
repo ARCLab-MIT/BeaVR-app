@@ -22,6 +22,12 @@ public class IPFieldManager : MonoBehaviour
     [Tooltip("When true, blocks non-digit and non-dot characters at entry time.")]
     public bool restrictToDigitsAndDot = false;
 
+    // Ephemeral stash of the most recently validated IPv4 (normalized).
+    // This is NOT persisted. Used by Save & Return.
+    static string _lastValidatedIPv4 = string.Empty;
+    public static string GetLastValidatedIPv4() => _lastValidatedIPv4;
+    public static void ClearLastValidatedIPv4() => _lastValidatedIPv4 = string.Empty;
+
     private void Awake()
     {
         if (ipInput == null)
@@ -53,6 +59,8 @@ public class IPFieldManager : MonoBehaviour
             if (restrictToDigitsAndDot)
                 ipInput.onValidateInput -= ValidateChar;
         }
+        // Clear ephemeral state when canvas/object is deactivated
+        ClearLastValidatedIPv4();
     }
 
     
@@ -111,6 +119,7 @@ public class IPFieldManager : MonoBehaviour
         {
             if (enableDebugLogging)
                 Debug.Log("[IPFieldManager] Empty submit; not showing error or refocusing.");
+            ClearLastValidatedIPv4();
             ipInput?.DeactivateInputField();
             EventSystem.current?.SetSelectedGameObject(null);
             return;
@@ -121,6 +130,9 @@ public class IPFieldManager : MonoBehaviour
             // ✅ Valid
             if (toastManager != null) toastManager.Success($"IP set to {ip}");
             else Debug.Log($"[Toast] Success: IP set to {ip}");
+
+            // Stash normalized valid value for Save&Return flow
+            _lastValidatedIPv4 = ip;
 
             ipInput.DeactivateInputField();
             EventSystem.current?.SetSelectedGameObject(null);
@@ -136,6 +148,13 @@ public class IPFieldManager : MonoBehaviour
             string shown = (original ?? string.Empty).Trim();
             if (toastManager != null) toastManager.Error($"Invalid IP: {shown}");
             else Debug.Log($"[Toast] Error: Invalid IP: {shown}");
+            // Clear stash on invalid
+            ClearLastValidatedIPv4();
+            // Optionally clear the visible text without causing extra events
+            ipInput?.SetTextWithoutNotify(string.Empty);
+            ipInput.caretPosition = 0;
+            ipInput.selectionStringAnchorPosition = 0;
+            ipInput.selectionStringFocusPosition = 0;
             // Do not force keyboard to reappear; allow user to dismiss
             // (Optionally, you could re-focus only if there is text and user prefers)
         }
