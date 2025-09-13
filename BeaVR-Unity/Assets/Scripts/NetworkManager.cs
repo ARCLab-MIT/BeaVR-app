@@ -113,22 +113,15 @@ public class NetworkManager : MonoBehaviour
             return "tcp://" + netConfig.IPAddress + ":" + netConfig.RightPausePortNum;
     }
 
-    public void changeIPAddress(string IPAddress)
-    {
-        netConfig.IPAddress = IPAddress;
-        IPNotFound = false;
-
-        // Storing in the Oculus Player Preferences Dict
-        PlayerPrefs.SetString("ipAddress", IPAddress);
-    }
+    // changeIPAddress no longer needed; IP is sourced from PlayerPrefs[ServerIP]
 
     void Start()
     {
         var jsonFile = Resources.Load<TextAsset>("Configurations/Network");
         netConfig = JsonUtility.FromJson<NetworkConfiguration>(jsonFile.text);
 
-        if (PlayerPrefs.HasKey("ipAddress"))
-            netConfig.IPAddress = PlayerPrefs.GetString("ipAddress");
+        if (PlayerPrefs.HasKey(SaveAndReturnIP.PlayerPrefsKey))
+            netConfig.IPAddress = PlayerPrefs.GetString(SaveAndReturnIP.PlayerPrefsKey);
 
         if (!netConfig.isIPAllocated())
             IPNotFound = true;

@@ -51,9 +51,10 @@ public class FieldInputManager : MonoBehaviour
             // First disconnect any existing connections
             netConfig.DisconnectAllNetworkComponents();
             
-            // Update the IP
-            netConfig.changeIPAddress(newIPAddress);
-            
+            // Persist new IP centrally
+            PlayerPrefs.SetString(SaveAndReturnIP.PlayerPrefsKey, newIPAddress);
+            PlayerPrefs.Save();
+
             // Display feedback message
             if (feedbackText != null)
             {
