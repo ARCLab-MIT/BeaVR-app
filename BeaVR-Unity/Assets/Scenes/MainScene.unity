@@ -935,6 +935,8 @@ GameObject:
   - component: {fileID: 213152970}
   - component: {fileID: 213152969}
   - component: {fileID: 213152972}
+  - component: {fileID: 213152974}
+  - component: {fileID: 213152973}
   m_Layer: 5
   m_Name: StartButton
   m_TagString: Untagged
@@ -1005,7 +1007,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 213152970}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 213152974}
+        m_TargetAssemblyTypeName: StartTeleopButton, Assembly-CSharp
+        m_MethodName: OnClick_StartTeleop
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &213152970
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1056,7 +1070,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f19b6e60eb60c044b1e397f2cfbf47f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CanvasSwitch
-  nextCanvas: {fileID: 0}
+  nextCanvas: {fileID: 369859528}
+--- !u!114 &213152973
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 213152967}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f19b6e60eb60c044b1e397f2cfbf47f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CanvasSwitch
+  nextCanvas: {fileID: 1930241850}
+--- !u!114 &213152974
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 213152967}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f5e9c96069d593040b7739cd5bd3cfbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StartTeleopButton
+  networkManager: {fileID: 1197026216}
+  canvasSwitch: {fileID: 213152973}
+  connectTimeoutSeconds: 2
 --- !u!1 &223974226
 GameObject:
   m_ObjectHideFlags: 0
@@ -1101,12 +1143,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9f025dc8af99e80e4b8146e9fb885129, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  XrOrigin: {fileID: 0}
+  leftHand: {fileID: 1768069890}
+  rightHand: {fileID: 642178995}
   MenuButton: {fileID: 0}
   ResolutionButton: {fileID: 0}
   HighResolutionButton: {fileID: 0}
   LowResolutionButton: {fileID: 0}
-  WristTracker: {fileID: 180354238}
   StreamBorder: {fileID: 1242621770}
   HighResolutionButtonController: {fileID: 0}
   LowResolutionButtonController: {fileID: 0}
@@ -3377,6 +3419,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SaveAndReturnIP
   ipInput: {fileID: 564264848}
   canvasSwitch: {fileID: 567144576}
+--- !u!114 &642178995 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2032031666409119128, guid: 0a7d2469f24041c4284c66706f84c45e, type: 3}
+  m_PrefabInstance: {fileID: 936747920}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb7623a8f0b49cf4dbaa40aea4d4be64, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &647748858
 GameObject:
   m_ObjectHideFlags: 0
@@ -7537,6 +7590,17 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1759358860}
   m_CullTransparentMesh: 1
+--- !u!114 &1768069890 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6518508909437870670, guid: 0a7d2469f24041c4284c66706f84c45e, type: 3}
+  m_PrefabInstance: {fileID: 936747920}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb7623a8f0b49cf4dbaa40aea4d4be64, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1769852866
 GameObject:
   m_ObjectHideFlags: 0

@@ -82,14 +82,13 @@ public class NetMQController : MonoBehaviour
             // Parse JSON
             var configJson = JsonUtility.FromJson<NetworkSettings>(configFile.text);
             
-            // Store configuration values
-            ipAddress = configJson.IPAddress;
+            // Store configuration values (ports only). IP will come from PlayerPrefs.
             rightKeypointPort = configJson.rightkeyptPortNum;
             leftKeypointPort = configJson.leftkeyptPortNum;
             resolutionPort = configJson.resolutionPortNum;
             pausePort = configJson.PausePortNum;
             
-            Debug.Log($"NetMQController: Network config loaded - IP: {ipAddress}");
+            Debug.Log("NetMQController: Network ports loaded from JSON");
         }
         catch (Exception e)
         {
@@ -166,7 +165,14 @@ public class NetMQController : MonoBehaviour
         {
             Debug.Log("NetMQController: Creating standard sockets...");
             
-            // Check if IP is undefined, skip socket creation if so
+            // Prefer IP from PlayerPrefs (set by GUI)
+            string prefsIP = PlayerPrefs.GetString(SaveAndReturnIP.PlayerPrefsKey, string.Empty);
+            if (!string.IsNullOrEmpty(prefsIP))
+            {
+                ipAddress = prefsIP;
+            }
+
+            // Check if IP is unavailable, skip socket creation
             if (string.IsNullOrEmpty(ipAddress) || ipAddress == "undefined")
             {
                 Debug.LogWarning("NetMQController: IP Address is undefined. Connection must be established manually.");

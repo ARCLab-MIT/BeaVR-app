@@ -11,16 +11,19 @@ using Unity.XR.CoreUtils;
 
 public class GestureDetectorXR : MonoBehaviour
 {
-	// XR / Hands
-	public XROrigin XrOrigin;
+	// XR / Hands (no XROrigin; using world space or OVRHand)
 	private XRHandSubsystem _handSubsystem;
+
+	// OVR Hands (optional; assign in inspector). If set, we use OVR pinch flags instead of distance checks
+	public OVRHand leftHand;
+	public OVRHand rightHand;
 
 	// UI and helpers (kept to match original behavior)
 	public GameObject MenuButton;
 	public GameObject ResolutionButton;
 	public GameObject HighResolutionButton;
 	public GameObject LowResolutionButton;
-	public GameObject WristTracker;
+	// WristTracker visual removed
 	public RawImage StreamBorder;
 
 	public HighResolutionButtonController HighResolutionButtonController;
@@ -126,7 +129,6 @@ public class GestureDetectorXR : MonoBehaviour
 		{
 			if (StreamBorder != null) StreamBorder.color = Color.red;
 			ToggleMenuButton(true);
-			if (WristTracker != null) WristTracker.SetActive(false);
 
 			string ipAddress = netConfig != null ? netConfig.netConfig.IPAddress : null;
 			if (!string.IsNullOrEmpty(ipAddress) && ipAddress != "undefined")
@@ -188,16 +190,30 @@ public class GestureDetectorXR : MonoBehaviour
 	// Gesture toggling using XR Hands (left hand only, to match original)
 	void StreamPauser()
 	{
-		if (_handSubsystem == null)
-			return;
+		bool pinchIndex = false;
+		bool pinchMiddle = false;
+		bool pinchRing = false;
 
-		var left = _handSubsystem.leftHand;
-		if (!left.isTracked)
-			return;
-
-		bool pinchIndex = IsPinching(left, XRHandJointID.IndexTip);
-		bool pinchMiddle = IsPinching(left, XRHandJointID.MiddleTip);
-		bool pinchRing = IsPinching(left, XRHandJointID.RingTip);
+		// Prefer OVR pinch detection if available
+		if (leftHand != null)
+		{
+			if (!leftHand.IsTracked)
+				return;
+			pinchIndex = leftHand.GetFingerIsPinching(OVRHand.HandFinger.Index);
+			pinchMiddle = leftHand.GetFingerIsPinching(OVRHand.HandFinger.Middle);
+			pinchRing = leftHand.GetFingerIsPinching(OVRHand.HandFinger.Ring);
+		}
+		else
+		{
+			if (_handSubsystem == null)
+				return;
+			var left = _handSubsystem.leftHand;
+			if (!left.isTracked)
+				return;
+			pinchIndex = IsPinching(left, XRHandJointID.IndexTip);
+			pinchMiddle = IsPinching(left, XRHandJointID.MiddleTip);
+			pinchRing = IsPinching(left, XRHandJointID.RingTip);
+		}
 
 		if (pinchMiddle)
 		{
@@ -205,7 +221,6 @@ public class GestureDetectorXR : MonoBehaviour
 			StreamAbsoluteData = true;
 			if (StreamBorder != null) StreamBorder.color = Color.blue;
 			ToggleMenuButton(false);
-			if (WristTracker != null) WristTracker.SetActive(true);
 			ShouldContinueArmTeleop = true;
 		}
 
@@ -215,7 +230,6 @@ public class GestureDetectorXR : MonoBehaviour
 			StreamAbsoluteData = false;
 			if (StreamBorder != null) StreamBorder.color = Color.green;
 			ToggleMenuButton(false);
-			if (WristTracker != null) WristTracker.SetActive(false);
 			ShouldContinueArmTeleop = true;
 		}
 
@@ -225,7 +239,6 @@ public class GestureDetectorXR : MonoBehaviour
 			StreamAbsoluteData = false;
 			if (StreamBorder != null) StreamBorder.color = Color.red;
 			ToggleMenuButton(true);
-			if (WristTracker != null) WristTracker.SetActive(false);
 			ShouldContinueArmTeleop = false;
 		}
 	}
@@ -243,15 +256,8 @@ public class GestureDetectorXR : MonoBehaviour
 
 	Vector3 ToWorldPosition(Vector3 pos)
 	{
-		Transform originTransform = null;
-		if (XrOrigin != null)
-		{
-			if (XrOrigin.Origin != null)
-				originTransform = XrOrigin.Origin.transform;
-			else
-				originTransform = XrOrigin.transform;
-		}
-		return originTransform != null ? originTransform.TransformPoint(pos) : pos;
+		// Using OVR Camera Rig: world space is fine
+		return pos;
 	}
 
 	void SendHandDataThroughController(string typeMarker)
@@ -392,5 +398,5 @@ public class GestureDetectorXR : MonoBehaviour
 
 	void OnDestroy()
 	{
-	    }
+	}
 }
