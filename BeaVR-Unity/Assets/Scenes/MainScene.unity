@@ -4813,6 +4813,18 @@ PrefabInstance:
       propertyPath: _maxRayLength
       value: 20
       objectReference: {fileID: 0}
+    - target: {fileID: 4163553459217574402, guid: a6df867c95b07224498cb3ea2d410ce5, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4163553459217574402, guid: a6df867c95b07224498cb3ea2d410ce5, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4163553459217574402, guid: a6df867c95b07224498cb3ea2d410ce5, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.2
+      objectReference: {fileID: 0}
     - target: {fileID: 5752237464076458512, guid: a6df867c95b07224498cb3ea2d410ce5, type: 3}
       propertyPath: m_LocalPosition.x
       value: -6.80788

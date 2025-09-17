@@ -14,6 +14,9 @@ public class GestureDetectorXR : MonoBehaviour
 	// XR / Hands (no XROrigin; using world space or OVRHand)
 	private XRHandSubsystem _handSubsystem;
 
+	// Throttled telemetry logging for keypoints
+	private float _lastKeypointLogTime = 0f;
+
 	// OVR Hands (optional; assign in inspector). If set, we use OVR pinch flags instead of distance checks
 	public OVRHand leftHand;
 	public OVRHand rightHand;
@@ -280,6 +283,21 @@ public class GestureDetectorXR : MonoBehaviour
 			string leftHandDataString = SerializeVector3List(leftHandGestureData);
 			leftHandDataString = typeMarker + ":" + leftHandDataString;
 			NetMQController.Instance.SendMessage("LeftHand", leftHandDataString);
+
+			// Throttled on-device log so you can verify what we're sending via adb
+			if (Time.time - _lastKeypointLogTime > 1.0f)
+			{
+				int rTotal = rightHandGestureData.Count;
+				int lTotal = leftHandGestureData.Count;
+				int rTracked = CountNonZeroJoints(rightHandGestureData);
+				int lTracked = CountNonZeroJoints(leftHandGestureData);
+				int sampleIndex = Mathf.Min(10, Mathf.Max(0, rTotal - 1)); // prefer IndexTip if available
+				Vector3 rSample = rTotal > 0 ? rightHandGestureData[sampleIndex] : Vector3.zero;
+				Vector3 lSample = lTotal > 0 ? leftHandGestureData[sampleIndex] : Vector3.zero;
+				Debug.Log(
+					$"GestureDetectorXR: sent {typeMarker} | RH joints={rTotal} tracked={rTracked} sample={FormatVec(rSample)} | LH joints={lTotal} tracked={lTracked} sample={FormatVec(lSample)}");
+				_lastKeypointLogTime = Time.time;
+			}
 		}
 		catch (Exception e)
 		{
@@ -302,6 +320,21 @@ public class GestureDetectorXR : MonoBehaviour
 				outPositions.Add(Vector3.zero);
 			}
 		}
+	}
+
+	int CountNonZeroJoints(List<Vector3> positions)
+	{
+		int count = 0;
+		for (int i = 0; i < positions.Count; i++)
+		{
+			if (positions[i] != Vector3.zero) count++;
+		}
+		return count;
+	}
+
+	string FormatVec(Vector3 v)
+	{
+		return $"({v.x:F3},{v.y:F3},{v.z:F3})";
 	}
 
 	void SendResolutionThroughController()
