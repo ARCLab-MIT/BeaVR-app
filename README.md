@@ -23,6 +23,7 @@ BeaVR is a VR application for Meta Quest that enables intuitive robot teleoperat
 | 👌 **Index-Thumb Pinch** | Activate teleoperation mode |
 | 🤏 **Middle Finger Pinch** | Pause streaming |
 | ✊ **Ring Finger Pinch** | Enable "Return to Menu" button |
+_ Gestures must be done with the left hand _
 
 ### Menu Navigation
 - **On Startup**: Configure the server IP address using the in-VR keyboard
