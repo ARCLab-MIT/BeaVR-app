@@ -58,6 +58,13 @@ public class StartTeleopButton : MonoBehaviour
         if (ok && canvasSwitch != null)
         {
             canvasSwitch.Switch();
+
+			// After switching, set streaming active (relative by default)
+			var gd = FindObjectOfType<GestureDetectorXR>();
+			if (gd != null)
+			{
+				gd.ActivateStreaming("relative");
+			}
         }
     }
 }

@@ -3,6 +3,8 @@ using UnityEngine;
 public class CanvasSwitch : MonoBehaviour
 {
     public GameObject nextCanvas;
+    [Header("Optional")]
+    public GameObject alsoDisableCanvas; // if set, this canvas will also be disabled
     GameObject currentCanvas;
 
     void Awake()
@@ -14,6 +16,7 @@ public class CanvasSwitch : MonoBehaviour
     public void Switch()
     {
         if (currentCanvas) currentCanvas.SetActive(false);
+        if (alsoDisableCanvas) alsoDisableCanvas.SetActive(false);
         if (nextCanvas) nextCanvas.SetActive(true);
     }
 }

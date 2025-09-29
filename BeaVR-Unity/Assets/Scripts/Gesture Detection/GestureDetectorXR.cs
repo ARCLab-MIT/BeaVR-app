@@ -15,7 +15,13 @@ public class GestureDetectorXR : MonoBehaviour
 	private XRHandSubsystem _handSubsystem;
 
 	// Throttled telemetry logging for keypoints
+	[Header("Debug Logging")]
+	public bool EnableKeypointLogging = false;
+	[Range(0.25f, 10f)] public float KeypointLogIntervalSeconds = 1.0f;
 	private float _lastKeypointLogTime = 0f;
+	private int _lastRightTrackedCount = -1;
+	private int _lastLeftTrackedCount = -1;
+	private string _lastModeLogged = "";
 
 	// OVR Hands (optional; assign in inspector). If set, we use OVR pinch flags instead of distance checks
 	public OVRHand leftHand;
@@ -131,16 +137,19 @@ public class GestureDetectorXR : MonoBehaviour
 		if (!isConnected)
 		{
 			if (StreamBorder != null) StreamBorder.color = Color.red;
-			ToggleMenuButton(true);
-
 			string ipAddress = netConfig != null ? netConfig.netConfig.IPAddress : null;
-			if (!string.IsNullOrEmpty(ipAddress) && ipAddress != "undefined")
+			bool hasIP = !string.IsNullOrEmpty(ipAddress) && ipAddress != "undefined";
+			if (!hasIP)
 			{
-				if (!connectionAttemptInProgress)
-				{
-					connectionAttemptInProgress = true;
-					StartCoroutine(AttemptConnection());
-				}
+				// No IP configured: keep menu visible so user can configure/connect
+				ToggleMenuButton(true);
+				return;
+			}
+			// With an IP configured, avoid flicker: only toggle visibility after attempt result
+			if (!connectionAttemptInProgress)
+			{
+				connectionAttemptInProgress = true;
+				StartCoroutine(AttemptConnection());
 			}
 			return;
 		}
@@ -285,18 +294,27 @@ public class GestureDetectorXR : MonoBehaviour
 			NetMQController.Instance.SendMessage("LeftHand", leftHandDataString);
 
 			// Throttled on-device log so you can verify what we're sending via adb
-			if (Time.time - _lastKeypointLogTime > 1.0f)
+			if (EnableKeypointLogging)
 			{
 				int rTotal = rightHandGestureData.Count;
 				int lTotal = leftHandGestureData.Count;
 				int rTracked = CountNonZeroJoints(rightHandGestureData);
 				int lTracked = CountNonZeroJoints(leftHandGestureData);
-				int sampleIndex = Mathf.Min(10, Mathf.Max(0, rTotal - 1)); // prefer IndexTip if available
-				Vector3 rSample = rTotal > 0 ? rightHandGestureData[sampleIndex] : Vector3.zero;
-				Vector3 lSample = lTotal > 0 ? leftHandGestureData[sampleIndex] : Vector3.zero;
-				Debug.Log(
-					$"GestureDetectorXR: sent {typeMarker} | RH joints={rTotal} tracked={rTracked} sample={FormatVec(rSample)} | LH joints={lTotal} tracked={lTracked} sample={FormatVec(lSample)}");
-				_lastKeypointLogTime = Time.time;
+				bool countsChanged = rTracked != _lastRightTrackedCount || lTracked != _lastLeftTrackedCount;
+				bool modeChanged = _lastModeLogged != typeMarker;
+				bool intervalElapsed = Time.time - _lastKeypointLogTime > Mathf.Max(0.1f, KeypointLogIntervalSeconds);
+				if (countsChanged || modeChanged || intervalElapsed)
+				{
+					int sampleIndex = Mathf.Min(10, Mathf.Max(0, rTotal - 1)); // prefer IndexTip if available
+					Vector3 rSample = rTotal > 0 ? rightHandGestureData[sampleIndex] : Vector3.zero;
+					Vector3 lSample = lTotal > 0 ? leftHandGestureData[sampleIndex] : Vector3.zero;
+					Debug.Log(
+						$"GestureDetectorXR: sent {typeMarker} | RH joints={rTotal} tracked={rTracked} sample={FormatVec(rSample)} | LH joints={lTotal} tracked={lTracked} sample={FormatVec(lSample)}");
+					_lastKeypointLogTime = Time.time;
+					_lastRightTrackedCount = rTracked;
+					_lastLeftTrackedCount = lTracked;
+					_lastModeLogged = typeMarker;
+				}
 			}
 		}
 		catch (Exception e)
@@ -405,6 +423,33 @@ public class GestureDetectorXR : MonoBehaviour
 	public void ToggleLowResolutionButton(bool toggle)
 	{
 		Debug.Log("LowResolutionButton toggle (XR): " + toggle);
+	}
+
+	public void ActivateStreaming(string mode = "relative")
+	{
+		try
+		{
+			string normalized = (mode ?? "relative").ToLowerInvariant();
+			StreamResolution = false;
+			if (normalized == "absolute")
+			{
+				StreamRelativeData = false;
+				StreamAbsoluteData = true;
+				if (StreamBorder != null) StreamBorder.color = Color.blue;
+			}
+			else
+			{
+				StreamRelativeData = true;
+				StreamAbsoluteData = false;
+				if (StreamBorder != null) StreamBorder.color = Color.green;
+			}
+			ToggleMenuButton(false);
+			ShouldContinueArmTeleop = true;
+		}
+		catch (Exception e)
+		{
+			Debug.LogError("Error in ActivateStreaming: " + e.Message);
+		}
 	}
 
 	// Exposed helpers for keep-alive
