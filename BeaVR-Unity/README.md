@@ -1,140 +1,150 @@
-# BeaVR-Unity
+# BeaVR Unity Project
 
-This Unity project, built on Unity 2021.3.45f, provides a VR-based motion tracking experience. It streams real-time hand-tracking data, camera feeds, and graphical data over a network, and simultaneously receives image streams for direct display on a 2D projection. The primary visualization includes hand keypoints, which indicate the status of the connection by mirroring hand movements.
-
----
-## Table of Contents
-
-1. [Project Structure](#project-structure)
-2. [Main Features](#main-features)
-3. [Networking Details](#networking-details)
-4. [How Data Flows](#how-data-flows)
-5. [Usage](#usage)
-6. [Oculus Integration Setup](#oculus-integration-setup)
-7. [Troubleshooting](#troubleshooting)
-8. [Future Plans](#future-plans)
-9. [License](#license)
-10. [Contact & Support](#contact--support)
+**Unity 6.2** | **OpenXR** | **XR Hands**
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
-- **Scripts:**
-  - Primary scripts (`GestureDetector.cs`, `NetworkManager.cs`) are located in:
-    ```
-    BeaVR-Unity/Assets/Scripts/Gesture Detection/
-    ```
-
-- **Configurations:**
-  - Network settings (IP addresses, ports) in:
-    ```
-    BeaVR-Unity/Assets/Resources/Configurations/Network.json
-    ```
-
-- **Other Notable Folders:**
-  - Camera streaming scripts:
-    ```
-    BeaVR-Unity/Assets/Camera Stream Scripts/
-    ```
-  - Oculus plugins and resources:
-    ```
-    BeaVR-Unity/Assets/Oculus/
-    ```
+```
+Assets/
+├── Scripts/
+│   ├── Gesture Detection/
+│   │   └── GestureDetectorXR.cs       # Hand tracking & pinch detection
+│   ├── Network/
+│   │   └── NetMQController.cs         # NetMQ messaging
+│   ├── NetworkManager.cs              # Network config
+│   ├── UI/                            # IP input, canvas switching
+│   ├── Camera Stream Scripts/
+│   │   └── CameraOneStreamer.cs       # Receive camera feed
+│   └── GraphStream.cs                 # Receive graph data
+│
+└── Resources/Configurations/
+    └── Network.json                   # IP addresses & ports
+```
 
 ---
 
-## Main Features
+## 🔄 Data Flow
 
-- Real-time streaming of camera images and graph data.
-- Precise tracking of left and right hand keypoints.
-- Network-driven 2D visualization.
+```
+XR Hands Subsystem
+       ↓
+GestureDetectorXR (26 joints/hand)
+       ↓
+NetMQController.SendMessage()
+       ↓
+   [Network]  ←─────────────┐
+       ↓                    │
+   Server              CameraOneStreamer
+                       GraphStream
+```
 
----
-
-## Networking Details
-
-- **NetworkManager.cs**:
-  - Manages network connections with configurations including:
-    - `IPAddress`
-    - `rightkeyptPortNum`
-    - `leftkeyptPortNum`
-    - Camera, graph, resolution, and pause ports.
-
-- Default port configurations are defined in:
-
-    ```
-    BeaVR-Unity/Assets/Resources/Configurations/Network.json
-    ```
-
+**Message Format**: `"x,y,z,x,y,z,..."` (78 floats per hand)
 
 ---
 
-## How Data Flows
+## Core Components
 
-- **GestureDetector.cs**:
-- Sends hand-tracking keypoints via NetMQ sockets.
-- Uses methods `getRightKeypointAddress()` and `getLeftKeypointAddress()`.
-- The `Update()` method switches from a menu to real-time streaming once connections are established.
+| Component | Purpose |
+|-----------|---------|
+| `GestureDetectorXR.cs` | XR Hands tracking → NetMQ |
+| `NetMQController.cs` | ZeroMQ pub/sub messaging |
+| `NetworkManager.cs` | Load `Network.json` config |
+| `CameraOneStreamer.cs` | Receive & display camera |
+| `GraphStream.cs` | Receive & display graphs |
 
-- **CameraOneStreamer.cs** and **GraphStream.cs**:
-- Receive real-time camera and graph feeds using addresses from `NetworkManager.cs`.
-
----
-
-## Usage
-
-1. **Configure IP Address:**
- - On the server, run `hostname -I` to obtain the IP address.
- - Input the obtained IP address directly into the application.
-
-2. **Launching Application:**
- - Shows a menu on startup if no connection is detected.
- - Connect VR equipment to transition automatically into streaming.
-
-3. **Testing & Deployment:**
- - Ensure Oculus hardware is properly configured for network streaming.
+### Hand Joint Order (XR Hands)
+```
+0:Wrist  1:Palm
+2-6:   Thumb (Metacarpal→Tip)
+7-11:  Index
+12-16: Middle
+17-21: Ring
+22-26: Little
+```
 
 ---
 
-## Oculus Integration Setup
+## ⚙️ Unity Setup
 
-To use the latest Oculus Integration package rather than the pre-bundled folder:
+### Required Packages
+- XR Plugin Management
+- XR Hands (v1.6.1)
+- XR Interaction Toolkit
+- NetMQ 4.0.2.1 (NuGet)
 
-1. **Remove Existing Folder:**
- - In your Unity project, delete or remove the entire folder:
-   ```
-   BeaVR-Unity/Assets/Oculus/
-   ```
+### Project Settings
+```
+XR Plug-in Management → OpenXR
+  ✓ OpenXR provider
+  ✓ Meta XR Hand Tracking Aim
+```
 
-2. **Download Oculus Integration (Deprecated)**:
- - In Unity, go to **Window** → **Package Manager**.
- - In the **Package Manager** window, switch the filter from "In Project" to "My Assets" (top-left corner).
- - Find **Oculus Integration (Deprecated)** from the [Unity Asset Store](https://assetstore.unity.com/packages/tools/integration/oculus-integration-deprecated-82022).
- - **Download** and then **Import** the integration package into the project.
+### Scene Requirements
+```
+XR Origin (XR Rig)
+  ├── Camera Offset
+  │   └── Main Camera
+  └── [Controllers/Hands]
 
-3. **Complete Setup**:
- - Allow Unity to compile and re-import the necessary files for Oculus VR support.
- - Check that you have the newly imported Oculus Integration scripts under `BeaVR-Unity/Assets/Oculus/`.
+EventSystem
+  └── XR UI Input Module
+
+Canvas (World Space)
+  └── Tracked Device Graphic Raycaster
+```
+
+---
+
+## Building for Quest
+
+| Setting | Value |
+|---------|-------|
+| **Platform** | Android |
+| **Scripting Backend** | IL2CPP |
+| **Target API Level** | 32+ |
+| **Texture Compression** | ASTC |
+| **XR Provider** | OpenXR (Android tab) |
+
+**Build**: File → Build Settings → Build and Run
 
 ---
 
 ## Troubleshooting
 
-- Verify IP and port configurations.
-- Check network connectivity if the menu persists on startup.
-- Ensure the Oculus Integration is installed and that the Oculus VR hardware is properly recognized.
+**Common Issues:**
+- **NuGet packages not loading**: Reinstall NuGet packages (NetMQ, AsyncIO, NaCl.Net)
+- **Hand tracking not working**: Enable OpenXR Hand Tracking Subsystem in Project Settings
+- **Build settings**: Platform (Android) and Target API Level (32+) are already configured
+
+---
+
+## 📦 Dependencies
+
+**NuGet** (in `Assets/Packages/`):
+- NetMQ 4.0.2.1
+- AsyncIO 0.1.69
+- NaCl.Net 0.1.13
+
+**Unity**:
+- XR Hands (1.6.1)
+- XR Interaction Toolkit
+- TextMesh Pro
+
+---
+
+## OVR vs OpenXR
+
+This project uses **OpenXR with Meta XR Interaction building blocks** instead of the legacy Oculus Integration SDK.
+
+**Key Differences:**
+- **Hand Tracking**: XR Hands provides 26 joints per hand vs OVR's bone structure
+- **Joint Order**: Different ordering - ensure receiver code matches XR Hands format (see above)
+- **Scene Setup**: Uses Meta XR Interaction building blocks for camera rig and UI interaction
 
 ---
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
-
----
-
-## Contact & Support
-
-For support, contributions, or issues:
-- **Email:** [Your Contact Email]
-- **GitHub Issues:** Open an issue directly on GitHub.
+MIT License
