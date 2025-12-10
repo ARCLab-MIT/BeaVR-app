@@ -32,8 +32,8 @@ public class NetworkManager : MonoBehaviour
     // Loading the Network Configurations
     public NetworkConfiguration netConfig;
 
-    // Display variables for menu
-    public TextMeshPro IPDisplay;
+    // Display variables for menu (UI text)
+    public TMP_Text IPDisplay;
 
     // To indicate no IP
     private bool IPNotFound;
@@ -155,11 +155,14 @@ public class NetworkManager : MonoBehaviour
 
     void Update()
     {
-        // Displaying IP information
-        if (!IPNotFound)
-            IPDisplay.text = "IP Address: " + netConfig.IPAddress;
-        else
-            IPDisplay.text = "IP Address: Not Specified";
+        // Displaying IP information (only if a label is assigned)
+        if (IPDisplay != null && netConfig != null)
+        {
+            if (!IPNotFound)
+                IPDisplay.text = "IP Address: " + netConfig.IPAddress;
+            else
+                IPDisplay.text = "IP Address: Not Specified";
+        }
     }
 
     public void UpdateConnectionFeedback(string message)
