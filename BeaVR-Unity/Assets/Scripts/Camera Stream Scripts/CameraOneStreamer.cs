@@ -28,7 +28,8 @@ public class CameraOneStreamer : MonoBehaviour
     private NetworkManager netConfig;
     private WebRTCSignalingClient signalingClient;
     private RTCPeerConnection peerConnection;
-    private VideoStreamRenderer videoRenderer;
+    private VideoStreamTrack currentVideoTrack;
+    private Texture currentTexture;
     private CancellationTokenSource connectionCts;
     private bool connectionEstablished;
     private bool isConnecting;
@@ -229,33 +230,51 @@ public class CameraOneStreamer : MonoBehaviour
     {
         if (e.Track is VideoStreamTrack videoTrack)
         {
+            // Ensure Unity-thread operations
             unitySync.Post(_ =>
             {
-                CleanupRenderer();
-                videoRenderer = new VideoStreamRenderer(videoTrack);
+                CleanupTrack();
+                currentVideoTrack = videoTrack;
+                currentVideoTrack.OnVideoReceived += HandleVideoReceived;
 
-                Texture texture = videoRenderer.GetTexture();
-                if (texture != null)
+                // If a texture already exists (e.g., fast first frame), apply immediately
+                if (currentVideoTrack.Texture != null)
                 {
-                    image.texture = texture;
-                    image.SetNativeSize();
+                    ApplyTexture(currentVideoTrack.Texture);
                 }
             }, null);
         }
     }
 
-    private void CleanupRenderer()
+    private void HandleVideoReceived(Texture texture)
     {
-        if (videoRenderer != null)
+        if (texture == null) return;
+        unitySync.Post(_ => ApplyTexture(texture), null);
+    }
+
+    private void ApplyTexture(Texture texture)
+    {
+        currentTexture = texture;
+        if (currentTexture != null)
         {
-            videoRenderer.Dispose();
-            videoRenderer = null;
+            image.texture = currentTexture;
+            image.SetNativeSize();
         }
+    }
+
+    private void CleanupTrack()
+    {
+        if (currentVideoTrack != null)
+        {
+            currentVideoTrack.OnVideoReceived -= HandleVideoReceived;
+            currentVideoTrack = null;
+        }
+        currentTexture = null;
     }
 
     private void CleanupPeer()
     {
-        CleanupRenderer();
+        CleanupTrack();
 
         if (peerConnection != null)
         {
