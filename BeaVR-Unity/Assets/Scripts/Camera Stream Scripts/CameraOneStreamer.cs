@@ -1,110 +1,45 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Unity.WebRTC;
 using UnityEngine;
 using UnityEngine.UI;
 
-using NetMQ;
-using NetMQ.Sockets;
-
-using System;
-using System.Collections.Generic;
-using System.Threading;
-
+/// <summary>
+/// WebRTC video receiver that replaces the previous NetMQ JPEG stream.
+/// Signaling happens via ZMQ REQ/REP against the Python server; media
+/// flows over WebRTC and renders into a RawImage.
+/// Config comes from Resources/Configurations/Network.json:
+/// - webrtcSignalingPort + IPAddress build tcp://host:port for ZMQ REQ
+/// - webrtcClientId identifies this client to the Python server
+/// - webrtcVerboseLogs gates all Debug.Log noise for troubleshooting
+/// </summary>
 public class CameraOneStreamer : MonoBehaviour
 {
-    private Thread imageStreamer;
-    private static List<byte[]> imageList;
-
+    [Header("UI")]
     public RawImage image;
-    private Texture2D texture;
 
-    //public NetworkConfigs netConf;
-    private bool connectionEstablished = false;
-    private string communicationAddress;
+    [Header("WebRTC Settings")]
+    [SerializeField] private int signalingTimeoutMs = 5000;
+    [SerializeField] private int videoWidth = 640;
+    [SerializeField] private int videoHeight = 360;
+    [SerializeField] private bool autoConnectOnStart = true;
+
     private NetworkManager netConfig;
-    private SubscriberSocket socket;
+    private WebRTCSignalingClient signalingClient;
+    private RTCPeerConnection peerConnection;
+    private VideoStreamRenderer videoRenderer;
+    private CancellationTokenSource connectionCts;
+    private bool connectionEstablished;
+    private bool isConnecting;
+    private Texture2D placeholderTexture;
+    private SynchronizationContext unitySync;
+    private static bool webRtcInitialized;
 
-    private void StartImageThread()
+    private void Start()
     {
-        try
-        {
-            // Check if communication address is available and not forced to disconnect
-            communicationAddress = netConfig.getCamAddress();
-            bool AddressAvailable = !String.Equals(communicationAddress, "tcp://:");
-            
-            if (AddressAvailable && !netConfig.ForceDisconnect)
-            {
-                StartConnection();
-                imageList = new List<byte[]>();
-                imageStreamer = new Thread(getRobotImage);
-                imageStreamer.Start();
-            }
-        }
-        catch (Exception e)
-        {
-            Debug.LogError("Error starting camera thread: " + e.Message);
-        }
-    }
+        unitySync = SynchronizationContext.Current;
 
-    public void StartConnection()
-    {
-        try
-        {
-            // Clean up any existing socket first
-            if (socket != null)
-            {
-                socket.Close();
-                socket.Dispose();
-            }
-            
-            // Initiate Subscriber Socket
-            socket = new SubscriberSocket();
-            socket.Options.ReceiveHighWatermark = 1000;
-            socket.Connect(communicationAddress);
-            socket.Subscribe("");
-            connectionEstablished = true;
-            Debug.Log("Camera connection established to: " + communicationAddress);
-        }
-        catch (Exception e)
-        {
-            Debug.LogError("Error establishing camera connection: " + e.Message);
-            connectionEstablished = false;
-        }
-    }
-
-    private void getRobotImage()
-    {
-        try
-        {
-            while (true)
-            {
-                // Exit thread if socket is null or Component is disabled
-                if (socket == null || !enabled) break;
-                
-                byte[] imageBytes = socket.ReceiveFrameBytes();
-                
-                if (imageList != null)
-                {
-                    imageList.Add(imageBytes);
-                    
-                    if (imageList.Count > 5)
-                    {
-                        imageList.RemoveAt(0);
-                    }
-                }
-                else
-                {
-                    break;
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            Debug.LogError("Camera thread error: " + e.Message);
-        }
-    }
-
-    public void Start()
-    {
-        // Getting the Network Config Updater gameobject
         GameObject netConfGame = GameObject.Find("NetworkConfigsLoader");
         if (netConfGame != null)
         {
@@ -113,107 +48,250 @@ public class CameraOneStreamer : MonoBehaviour
         else
         {
             Debug.LogError("NetworkConfigsLoader not found!");
+            enabled = false;
             return;
         }
 
-        // Initializing the image texture
-        texture = new Texture2D(640, 360, TextureFormat.RGB24, false);
-        image.texture = texture;
+        placeholderTexture = new Texture2D(videoWidth, videoHeight, TextureFormat.RGB24, false);
+        image.texture = placeholderTexture;
+        image.SetNativeSize();
+
+        if (autoConnectOnStart)
+        {
+            _ = EnsureConnectionAsync();
+        }
     }
 
-    public void Update()
+    private void Update()
     {
-        if (connectionEstablished)
+        if (webRtcInitialized)
         {
-            // Check if network manager is forcing disconnect
-            if (netConfig.ForceDisconnect)
-            {
-                DisconnectNetMQ();
-                return;
-            }
-            
-            // To check if the same IP is being used
-            if (String.Equals(communicationAddress, netConfig.getCamAddress()))
-            {
-                // Check if the list has any elements before trying to access them
-                if (imageList != null && imageList.Count > 0)
-                {
-                    try
-                    {
-                        // Getting the image from the queue and displaying it
-                        byte[] imageBytes = imageList[imageList.Count - 1];
-                        texture.LoadImage(imageBytes);
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogError("Error updating camera texture: " + e.Message);
-                    }
-                }
-            }
-            else
-            {
-                // Address changed, disconnect and reconnect
-                DisconnectNetMQ();
-            }
+            WebRTC.Update();
         }
-        else if (!netConfig.ForceDisconnect)
-        {
-            StartImageThread();
-        }
-    }
-    
-    // Add these methods for NetworkManager integration
-    void OnDestroy()
-    {
-        DisconnectNetMQ();
-    }
 
-    void OnApplicationQuit()
-    {
-        DisconnectNetMQ();
-    }
+        if (netConfig == null)
+            return;
 
-    public void DisconnectNetMQ()
-    {
-        // Safely stop the thread
-        if (imageStreamer != null && imageStreamer.IsAlive)
+        if (netConfig.ForceDisconnect)
         {
-            try
-            {
-                imageStreamer.Abort();
-                imageStreamer = null;
-            }
-            catch (Exception e)
-            {
-                Debug.LogError("Error stopping camera thread: " + e.Message);
-            }
+            DisconnectNetMQ();
+            return;
         }
-        
-        // Close socket
-        if (socket != null)
+
+        if (autoConnectOnStart && !connectionEstablished && !isConnecting)
         {
-            try
-            {
-                socket.Close();
-                socket.Dispose();
-                socket = null;
-            }
-            catch (Exception e)
-            {
-                Debug.LogError("Error closing camera socket: " + e.Message);
-            }
+            _ = EnsureConnectionAsync();
         }
-        
-        connectionEstablished = false;
-        Debug.Log("Camera connection closed");
     }
 
     public void ConnectNetMQ()
     {
-        // Only reconnect if we're not already connected
-        if (!connectionEstablished)
+        _ = EnsureConnectionAsync();
+    }
+
+    public void DisconnectNetMQ()
+    {
+        connectionCts?.Cancel();
+        connectionCts = null;
+        isConnecting = false;
+        connectionEstablished = false;
+
+        CleanupPeer();
+
+        if (signalingClient != null)
         {
-            StartImageThread();
+            signalingClient.Dispose();
+            signalingClient = null;
+        }
+
+        if (placeholderTexture != null)
+        {
+            image.texture = placeholderTexture;
+        }
+    }
+
+    private async Task EnsureConnectionAsync()
+    {
+        if (connectionEstablished || isConnecting)
+            return;
+
+        if (netConfig == null)
+            return;
+
+        string signalingAddress = netConfig.getWebRTCSignalingAddress();
+        if (string.Equals(signalingAddress, "tcp://:", StringComparison.Ordinal))
+        {
+            if (netConfig.IsWebRTCVerbose())
+            {
+                Debug.LogWarning("WebRTC signaling address is not set; skipping connection");
+            }
+            return;
+        }
+
+        isConnecting = true;
+        connectionCts = new CancellationTokenSource();
+
+        try
+        {
+            InitializeWebRTCIfNeeded();
+
+            signalingClient?.Dispose();
+            signalingClient = new WebRTCSignalingClient(signalingAddress, netConfig.IsWebRTCVerbose());
+
+            var config = BuildRtcConfig();
+            peerConnection = new RTCPeerConnection(ref config);
+            peerConnection.OnIceCandidate = candidate =>
+            {
+                if (netConfig.IsWebRTCVerbose())
+                {
+                    Debug.Log($"Local ICE candidate gathered: {candidate.Candidate}");
+                }
+            };
+            peerConnection.OnTrack = OnTrackReceived;
+
+            var transceiver = peerConnection.AddTransceiver(TrackKind.Video);
+            transceiver.Direction = RTCRtpTransceiverDirection.RecvOnly;
+
+            var offer = await peerConnection.CreateOffer();
+            await peerConnection.SetLocalDescription(ref offer);
+
+            var offerPayload = new WebRTCSignalingClient.OfferPayload
+            {
+                client_id = netConfig.getWebRTCClientId(),
+                sdp = offer.sdp
+            };
+
+            var answer = await signalingClient.SendOfferAsync(offerPayload, signalingTimeoutMs, connectionCts.Token);
+
+            var answerDesc = new RTCSessionDescription
+            {
+                type = RTCSdpType.Answer,
+                sdp = answer.sdp
+            };
+            await peerConnection.SetRemoteDescription(ref answerDesc);
+
+            if (answer.candidates != null)
+            {
+                foreach (var cand in answer.candidates)
+                {
+                    var init = new RTCIceCandidateInit
+                    {
+                        candidate = cand.candidate,
+                        sdpMid = cand.sdpMid,
+                        sdpMLineIndex = cand.sdpMLineIndex
+                    };
+
+                    bool added = peerConnection.AddIceCandidate(new RTCIceCandidate(init));
+                    if (!added && netConfig.IsWebRTCVerbose())
+                    {
+                        Debug.LogWarning($"Failed to add remote ICE candidate: {cand.candidate}");
+                    }
+                }
+            }
+
+            connectionEstablished = true;
+            if (netConfig.IsWebRTCVerbose())
+            {
+                Debug.Log($"WebRTC video connected via {signalingAddress} as {offerPayload.client_id}");
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            if (netConfig.IsWebRTCVerbose())
+            {
+                Debug.Log("WebRTC connection attempt canceled");
+            }
+            DisconnectNetMQ();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"WebRTC connection error: {e.Message}");
+            DisconnectNetMQ();
+        }
+        finally
+        {
+            isConnecting = false;
+        }
+    }
+
+    private RTCConfiguration BuildRtcConfig()
+    {
+        return new RTCConfiguration
+        {
+            iceServers = new[]
+            {
+                new RTCIceServer { urls = new[] { "stun:stun.l.google.com:19302" } }
+            }
+        };
+    }
+
+    private void OnTrackReceived(RTCTrackEvent e)
+    {
+        if (e.Track is VideoStreamTrack videoTrack)
+        {
+            unitySync.Post(_ =>
+            {
+                CleanupRenderer();
+                videoRenderer = new VideoStreamRenderer(videoTrack);
+
+                Texture texture = videoRenderer.GetTexture();
+                if (texture != null)
+                {
+                    image.texture = texture;
+                    image.SetNativeSize();
+                }
+            }, null);
+        }
+    }
+
+    private void CleanupRenderer()
+    {
+        if (videoRenderer != null)
+        {
+            videoRenderer.Dispose();
+            videoRenderer = null;
+        }
+    }
+
+    private void CleanupPeer()
+    {
+        CleanupRenderer();
+
+        if (peerConnection != null)
+        {
+            peerConnection.Close();
+            peerConnection.Dispose();
+            peerConnection = null;
+        }
+    }
+
+    private void InitializeWebRTCIfNeeded()
+    {
+        if (webRtcInitialized)
+            return;
+
+        WebRTC.Initialize();
+        webRtcInitialized = true;
+    }
+
+    private void OnDestroy()
+    {
+        DisconnectNetMQ();
+        DisposeWebRTC();
+    }
+
+    private void OnApplicationQuit()
+    {
+        DisconnectNetMQ();
+        DisposeWebRTC();
+    }
+
+    private void DisposeWebRTC()
+    {
+        if (webRtcInitialized)
+        {
+            WebRTC.Dispose();
+            webRtcInitialized = false;
         }
     }
 }

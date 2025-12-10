@@ -14,6 +14,9 @@ public class NetworkConfiguration
     public string PausePortNum;
     public string LeftPausePortNum;
     public string RightPausePortNum;
+    public string webrtcSignalingPort;
+    public string webrtcClientId;
+    public bool webrtcVerboseLogs;
 
     public bool isIPAllocated()
     {
@@ -79,6 +82,27 @@ public class NetworkManager : MonoBehaviour
             return "tcp://:";
         else
             return "tcp://" + netConfig.IPAddress + ":" + netConfig.graphPortNum;
+    }
+
+    public string getWebRTCSignalingAddress()
+    {
+        if (IPNotFound || string.IsNullOrEmpty(netConfig.webrtcSignalingPort))
+            return "tcp://:";
+        else
+            return "tcp://" + netConfig.IPAddress + ":" + netConfig.webrtcSignalingPort;
+    }
+
+    public string getWebRTCClientId()
+    {
+        if (string.IsNullOrEmpty(netConfig.webrtcClientId))
+            return "unity-webrtc-client";
+        else
+            return netConfig.webrtcClientId;
+    }
+
+    public bool IsWebRTCVerbose()
+    {
+        return netConfig != null && netConfig.webrtcVerboseLogs;
     }
 
     public string getResolutionAddress()

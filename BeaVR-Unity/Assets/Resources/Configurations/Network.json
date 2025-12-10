@@ -1,4 +1,4 @@
-﻿{
+{
   "IPAddress": "undefined",
   "rightkeyptPortNum": "8087",
   "leftkeyptPortNum": "8110",
@@ -7,5 +7,8 @@
   "resolutionPortNum": "8095",
   "PausePortNum": "8100",
   "LeftPausePortNum": "8107",
-  "RightPausePortNum": "8109"
+  "RightPausePortNum": "8109",
+  "webrtcSignalingPort": "10005",
+  "webrtcClientId": "quest-client-1",
+  "webrtcVerboseLogs": false
 }
