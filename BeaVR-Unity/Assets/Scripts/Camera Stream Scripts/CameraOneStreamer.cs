@@ -35,7 +35,6 @@ public class CameraOneStreamer : MonoBehaviour
     private bool isConnecting;
     private Texture2D placeholderTexture;
     private SynchronizationContext unitySync;
-    private static bool webRtcInitialized;
 
     private void Start()
     {
@@ -65,10 +64,7 @@ public class CameraOneStreamer : MonoBehaviour
 
     private void Update()
     {
-        if (webRtcInitialized)
-        {
-            WebRTC.Update();
-        }
+        WebRTC.Update();
 
         if (netConfig == null)
             return;
@@ -134,8 +130,6 @@ public class CameraOneStreamer : MonoBehaviour
 
         try
         {
-            InitializeWebRTCIfNeeded();
-
             signalingClient?.Dispose();
             signalingClient = new WebRTCSignalingClient(signalingAddress, netConfig.IsWebRTCVerbose());
 
@@ -153,8 +147,11 @@ public class CameraOneStreamer : MonoBehaviour
             var transceiver = peerConnection.AddTransceiver(TrackKind.Video);
             transceiver.Direction = RTCRtpTransceiverDirection.RecvOnly;
 
-            var offer = await peerConnection.CreateOffer();
-            await peerConnection.SetLocalDescription(ref offer);
+            var offerOp = peerConnection.CreateOffer();
+            var offer = await AwaitSdpAsync(offerOp);
+
+            var setLocalOp = peerConnection.SetLocalDescription(ref offer);
+            await AwaitSetSdpAsync(setLocalOp);
 
             var offerPayload = new WebRTCSignalingClient.OfferPayload
             {
@@ -169,7 +166,8 @@ public class CameraOneStreamer : MonoBehaviour
                 type = RTCSdpType.Answer,
                 sdp = answer.sdp
             };
-            await peerConnection.SetRemoteDescription(ref answerDesc);
+            var setRemoteOp = peerConnection.SetRemoteDescription(ref answerDesc);
+            await AwaitSetSdpAsync(setRemoteOp);
 
             if (answer.candidates != null)
             {
@@ -284,33 +282,41 @@ public class CameraOneStreamer : MonoBehaviour
         }
     }
 
-    private void InitializeWebRTCIfNeeded()
-    {
-        if (webRtcInitialized)
-            return;
-
-        WebRTC.Initialize();
-        webRtcInitialized = true;
-    }
-
     private void OnDestroy()
     {
         DisconnectNetMQ();
-        DisposeWebRTC();
     }
 
     private void OnApplicationQuit()
     {
         DisconnectNetMQ();
-        DisposeWebRTC();
     }
 
-    private void DisposeWebRTC()
+    private static async Task<RTCSessionDescription> AwaitSdpAsync(RTCSessionDescriptionAsyncOperation op)
     {
-        if (webRtcInitialized)
+        while (!op.IsDone)
         {
-            WebRTC.Dispose();
-            webRtcInitialized = false;
+            await Task.Yield();
+        }
+
+        if (op.IsError)
+        {
+            throw new Exception($"SDP operation failed: {op.Error.message}");
+        }
+
+        return op.Desc;
+    }
+
+    private static async Task AwaitSetSdpAsync(RTCSetSessionDescriptionAsyncOperation op)
+    {
+        while (!op.IsDone)
+        {
+            await Task.Yield();
+        }
+
+        if (op.IsError)
+        {
+            throw new Exception($"Set SDP failed: {op.Error.message}");
         }
     }
 }
