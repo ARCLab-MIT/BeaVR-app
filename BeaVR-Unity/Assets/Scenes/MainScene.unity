@@ -130,6 +130,7 @@ GameObject:
   - component: {fileID: 40919615}
   - component: {fileID: 40919617}
   - component: {fileID: 40919616}
+  - component: {fileID: 40919618}
   m_Layer: 3
   m_Name: CamOneRawImage
   m_TagString: Untagged
@@ -146,7 +147,7 @@ RectTransform:
   m_GameObject: {fileID: 40919614}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 5}
-  m_LocalScale: {x: 0.1, y: 0.1, z: 1}
+  m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1930241854}
@@ -154,7 +155,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 720, y: 480}
+  m_SizeDelta: {x: 1280, y: 720}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &40919616
 MonoBehaviour:
@@ -169,7 +170,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.21960786, g: 0.21960786, b: 0.21960786, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -191,6 +192,23 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 40919614}
   m_CullTransparentMesh: 1
+--- !u!114 &40919618
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 40919614}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 24fe941893f7f42cea42d9db922448ce, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CameraOneStreamer
+  image: {fileID: 40919616}
+  signalingTimeoutMs: 15000
+  videoWidth: 640
+  videoHeight: 480
+  autoConnectOnStart: 1
 --- !u!1 &40939087
 GameObject:
   m_ObjectHideFlags: 0
@@ -3948,7 +3966,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1038226537
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4941,7 +4959,10 @@ MonoBehaviour:
     PausePortNum: 
     LeftPausePortNum: 
     RightPausePortNum: 
-  IPDisplay: {fileID: 0}
+    webrtcSignalingPort: 
+    webrtcClientId: 
+    webrtcVerboseLogs: 0
+  IPDisplay: {fileID: 1813279056}
 --- !u!4 &1197026217
 Transform:
   m_ObjectHideFlags: 0
@@ -6762,13 +6783,14 @@ GameObject:
   - component: {fileID: 1930241851}
   - component: {fileID: 1930241856}
   - component: {fileID: 1930241855}
+  - component: {fileID: 1930241857}
   m_Layer: 3
   m_Name: StreamDisplayCanvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1930241851
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6840,19 +6862,18 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1930241850}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 50}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 19}
+  m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1242621769}
   - {fileID: 40919615}
-  - {fileID: 2107541913}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 640, y: 480}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1930241855
 MonoBehaviour:
@@ -6866,7 +6887,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d57dc6cb7117e4b67b2b5fd52d828622, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GraphStream
-  image: {fileID: 2107541911}
+  image: {fileID: 0}
 --- !u!114 &1930241856
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6879,7 +6900,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 24fe941893f7f42cea42d9db922448ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraOneStreamer
-  image: {fileID: 40919616}
+  image: {fileID: 1242621770}
+  signalingTimeoutMs: 5000
+  videoWidth: 640
+  videoHeight: 480
+  autoConnectOnStart: 1
+--- !u!114 &1930241857
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1930241850}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ee10491ef6d5d1d49a270cf6b09bdc19, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Oculus.VR::OVROverlayCanvas
+  _enableMipmapping: 0
+  _dynamicResolution: 1
+  _redrawResolutionThreshold: 2147483647
+  rectTransform: {fileID: 1930241854}
+  maxTextureSize: 2048
+  manualRedraw: 0
+  renderInterval: 1
+  renderIntervalFrameOffset: 0
+  expensive: 0
+  layer: 5
+  opacity: 2
+  shape: 0
+  curveRadius: 1
+  overlapMask: 0
+  overlayType: 1
+  _overlayEnabled: 1
 --- !u!1 &1985308836
 GameObject:
   m_ObjectHideFlags: 0
@@ -7219,78 +7272,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _facing: 0
   _doubleSided: 0
---- !u!1 &2107541910
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2107541913}
-  - component: {fileID: 2107541912}
-  - component: {fileID: 2107541911}
-  m_Layer: 3
-  m_Name: GraphRawImage
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &2107541911
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2107541910}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1344c3c82d62a2a41a3576d8abb8e3ea, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Material: {fileID: 0}
-  m_Color: {r: 0.8962264, g: 0.8962264, b: 0.8962264, a: 1}
-  m_RaycastTarget: 0
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Texture: {fileID: 0}
-  m_UVRect:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 1
-    height: 1
---- !u!222 &2107541912
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2107541910}
-  m_CullTransparentMesh: 1
---- !u!224 &2107541913
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2107541910}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.1, y: 0.1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1930241854}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -25, y: 11}
-  m_SizeDelta: {x: 120, y: 120}
-  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &2135188489
 GameObject:
   m_ObjectHideFlags: 0
