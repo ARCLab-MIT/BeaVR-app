@@ -10,5 +10,5 @@
   "RightPausePortNum": "8109",
   "webrtcSignalingPort": "10005",
   "webrtcClientId": "quest-client-1",
-  "webrtcVerboseLogs": false
+  "webrtcVerboseLogs": true
 }
