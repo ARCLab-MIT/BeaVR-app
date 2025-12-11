@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.WebRTC;
@@ -42,12 +43,12 @@ public class CameraOneStreamer : MonoBehaviour
 
     private void Awake()
     {
-        // Explicitly initialize WebRTC; force software path so it runs on machines/Quest without GPU decode
+        // Explicitly initialize WebRTC; prefer software path when available to run on Quest without GPU decode.
+        // Use reflection so the code compiles against older/newer com.unity.webrtc versions that may not expose EncoderType/Dispose.
         if (!webRtcInitialized)
         {
-            WebRTC.Initialize(EncoderType.Software);
+            InitializeWebRTCWithFallback();
             webRtcInitialized = true;
-            Debug.Log("WebRTC initialized (software encoder)");
         }
 
         // Prepare a material that can sample external textures on Android/Quest
@@ -333,9 +334,7 @@ public class CameraOneStreamer : MonoBehaviour
         DisconnectNetMQ();
         if (webRtcInitialized)
         {
-            WebRTC.Dispose();
             webRtcInitialized = false;
-            Debug.Log("WebRTC disposed (OnDestroy)");
         }
         if (runtimeVideoMaterial != null && externalVideoMaterial == null)
         {
@@ -349,14 +348,47 @@ public class CameraOneStreamer : MonoBehaviour
         DisconnectNetMQ();
         if (webRtcInitialized)
         {
-            WebRTC.Dispose();
             webRtcInitialized = false;
-            Debug.Log("WebRTC disposed (OnApplicationQuit)");
         }
         if (runtimeVideoMaterial != null && externalVideoMaterial == null)
         {
             Destroy(runtimeVideoMaterial);
             runtimeVideoMaterial = null;
+        }
+    }
+
+    /// <summary>
+    /// Initialize WebRTC in a version-tolerant way. If the EncoderType overload exists,
+    /// prefer the Software encoder; otherwise fall back to the parameterless Initialize.
+    /// </summary>
+    private static void InitializeWebRTCWithFallback()
+    {
+        try
+        {
+            var encoderType = Type.GetType("Unity.WebRTC.EncoderType, Unity.WebRTC");
+            var methods = typeof(WebRTC).GetMethods(BindingFlags.Public | BindingFlags.Static);
+
+            // Look for Initialize(EncoderType)
+            foreach (var method in methods)
+            {
+                var parameters = method.GetParameters();
+                if (method.Name == "Initialize" && parameters.Length == 1 && encoderType != null && parameters[0].ParameterType == encoderType)
+                {
+                    var softwareValue = Enum.Parse(encoderType, "Software");
+                    method.Invoke(null, new[] { softwareValue });
+                    Debug.Log("WebRTC initialized (software encoder via reflection)");
+                    return;
+                }
+            }
+
+            // Fallback: parameterless Initialize (default encoder)
+            var noArgInit = typeof(WebRTC).GetMethod("Initialize", Type.EmptyTypes);
+            noArgInit?.Invoke(null, null);
+            Debug.Log("WebRTC initialized (default encoder)");
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"WebRTC initialization failed: {ex.Message}");
         }
     }
 
