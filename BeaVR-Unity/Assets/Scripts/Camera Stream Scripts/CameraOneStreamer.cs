@@ -228,6 +228,11 @@ public class CameraOneStreamer : MonoBehaviour
     {
         if (e.Track is VideoStreamTrack videoTrack)
         {
+            if (netConfig != null && netConfig.IsWebRTCVerbose())
+            {
+                Debug.Log("OnTrackReceived: video track received");
+            }
+
             // Ensure Unity-thread operations
             unitySync.Post(_ =>
             {
@@ -238,6 +243,10 @@ public class CameraOneStreamer : MonoBehaviour
                 // If a texture already exists (e.g., fast first frame), apply immediately
                 if (currentVideoTrack.Texture != null)
                 {
+                    if (netConfig != null && netConfig.IsWebRTCVerbose())
+                    {
+                        Debug.Log($"OnTrackReceived: applying existing texture {currentVideoTrack.Texture.width}x{currentVideoTrack.Texture.height}");
+                    }
                     ApplyTexture(currentVideoTrack.Texture);
                 }
             }, null);
@@ -247,6 +256,10 @@ public class CameraOneStreamer : MonoBehaviour
     private void HandleVideoReceived(Texture texture)
     {
         if (texture == null) return;
+        if (netConfig != null && netConfig.IsWebRTCVerbose())
+        {
+            Debug.Log($"HandleVideoReceived: {texture.width}x{texture.height}");
+        }
         unitySync.Post(_ => ApplyTexture(texture), null);
     }
 

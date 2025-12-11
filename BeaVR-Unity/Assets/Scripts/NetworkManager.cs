@@ -158,10 +158,10 @@ public class NetworkManager : MonoBehaviour
         // Displaying IP information (only if a label is assigned)
         if (IPDisplay != null && netConfig != null)
         {
-            if (!IPNotFound)
-                IPDisplay.text = "IP Address: " + netConfig.IPAddress;
-            else
-                IPDisplay.text = "IP Address: Not Specified";
+        if (!IPNotFound)
+            IPDisplay.text = "IP Address: " + netConfig.IPAddress;
+        else
+            IPDisplay.text = "IP Address: Not Specified";
         }
     }
 
