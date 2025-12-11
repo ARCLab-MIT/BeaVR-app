@@ -20,7 +20,7 @@ public class CameraOneStreamer : MonoBehaviour
     public RawImage image;
 
     [Header("WebRTC Settings")]
-    [SerializeField] private int signalingTimeoutMs = 5000;
+    [SerializeField] private int signalingTimeoutMs = 15000;
     [SerializeField] private int videoWidth = 640;
     [SerializeField] private int videoHeight = 360;
     [SerializeField] private bool autoConnectOnStart = true;
@@ -60,6 +60,8 @@ public class CameraOneStreamer : MonoBehaviour
         {
             _ = EnsureConnectionAsync();
         }
+
+        Debug.Log($"CameraOneStreamer start: webrtcVerboseLogs={netConfig != null && netConfig.IsWebRTCVerbose()}");
     }
 
     private void Update()
@@ -228,10 +230,7 @@ public class CameraOneStreamer : MonoBehaviour
     {
         if (e.Track is VideoStreamTrack videoTrack)
         {
-            if (netConfig != null && netConfig.IsWebRTCVerbose())
-            {
-                Debug.Log("OnTrackReceived: video track received");
-            }
+            Debug.Log("OnTrackReceived: video track received");
 
             // Ensure Unity-thread operations
             unitySync.Post(_ =>
@@ -243,10 +242,7 @@ public class CameraOneStreamer : MonoBehaviour
                 // If a texture already exists (e.g., fast first frame), apply immediately
                 if (currentVideoTrack.Texture != null)
                 {
-                    if (netConfig != null && netConfig.IsWebRTCVerbose())
-                    {
-                        Debug.Log($"OnTrackReceived: applying existing texture {currentVideoTrack.Texture.width}x{currentVideoTrack.Texture.height}");
-                    }
+                    Debug.Log($"OnTrackReceived: applying existing texture {currentVideoTrack.Texture.width}x{currentVideoTrack.Texture.height}");
                     ApplyTexture(currentVideoTrack.Texture);
                 }
             }, null);
@@ -256,10 +252,7 @@ public class CameraOneStreamer : MonoBehaviour
     private void HandleVideoReceived(Texture texture)
     {
         if (texture == null) return;
-        if (netConfig != null && netConfig.IsWebRTCVerbose())
-        {
-            Debug.Log($"HandleVideoReceived: {texture.width}x{texture.height}");
-        }
+        Debug.Log($"HandleVideoReceived: {texture.width}x{texture.height}");
         unitySync.Post(_ => ApplyTexture(texture), null);
     }
 
