@@ -24,6 +24,8 @@ public class CameraOneStreamer : MonoBehaviour
     [SerializeField] private int videoWidth = 640;
     [SerializeField] private int videoHeight = 360;
     [SerializeField] private bool autoConnectOnStart = true;
+    [Tooltip("Material for external WebRTC textures (e.g., Quest). Leave empty to auto-create with WebRTC/ExternalVideo shader.")]
+    [SerializeField] private Material externalVideoMaterial;
 
     private NetworkManager netConfig;
     private WebRTCSignalingClient signalingClient;
@@ -35,6 +37,38 @@ public class CameraOneStreamer : MonoBehaviour
     private bool isConnecting;
     private Texture2D placeholderTexture;
     private SynchronizationContext unitySync;
+    private static bool webRtcInitialized;
+    private Material runtimeVideoMaterial;
+
+    private void Awake()
+    {
+        // Explicitly initialize WebRTC; force software path so it runs on machines/Quest without GPU decode
+        if (!webRtcInitialized)
+        {
+            WebRTC.Initialize(EncoderType.Software);
+            webRtcInitialized = true;
+            Debug.Log("WebRTC initialized (software encoder)");
+        }
+
+        // Prepare a material that can sample external textures on Android/Quest
+        if (externalVideoMaterial != null)
+        {
+            runtimeVideoMaterial = externalVideoMaterial;
+        }
+        else
+        {
+            var shader = Shader.Find("WebRTC/ExternalVideo");
+            if (shader != null)
+            {
+                runtimeVideoMaterial = new Material(shader);
+                runtimeVideoMaterial.name = "RuntimeExternalVideoMaterial";
+            }
+            else
+            {
+                Debug.LogWarning("WebRTC/ExternalVideo shader not found; RawImage will use default UI material (may stay black on Quest).");
+            }
+        }
+    }
 
     private void Start()
     {
@@ -107,6 +141,7 @@ public class CameraOneStreamer : MonoBehaviour
         {
             image.texture = placeholderTexture;
         }
+        image.material = null; // revert to default UI material
     }
 
     private async Task EnsureConnectionAsync()
@@ -261,8 +296,13 @@ public class CameraOneStreamer : MonoBehaviour
         currentTexture = texture;
         if (currentTexture != null)
         {
+            if (runtimeVideoMaterial != null)
+            {
+                image.material = runtimeVideoMaterial;
+            }
             image.texture = currentTexture;
             image.SetNativeSize();
+            Debug.Log($"ApplyTexture: {currentTexture.width}x{currentTexture.height} ({currentTexture.GetType().Name})");
         }
     }
 
@@ -291,11 +331,33 @@ public class CameraOneStreamer : MonoBehaviour
     private void OnDestroy()
     {
         DisconnectNetMQ();
+        if (webRtcInitialized)
+        {
+            WebRTC.Dispose();
+            webRtcInitialized = false;
+            Debug.Log("WebRTC disposed (OnDestroy)");
+        }
+        if (runtimeVideoMaterial != null && externalVideoMaterial == null)
+        {
+            Destroy(runtimeVideoMaterial);
+            runtimeVideoMaterial = null;
+        }
     }
 
     private void OnApplicationQuit()
     {
         DisconnectNetMQ();
+        if (webRtcInitialized)
+        {
+            WebRTC.Dispose();
+            webRtcInitialized = false;
+            Debug.Log("WebRTC disposed (OnApplicationQuit)");
+        }
+        if (runtimeVideoMaterial != null && externalVideoMaterial == null)
+        {
+            Destroy(runtimeVideoMaterial);
+            runtimeVideoMaterial = null;
+        }
     }
 
     private static async Task<RTCSessionDescription> AwaitSdpAsync(RTCSessionDescriptionAsyncOperation op)
