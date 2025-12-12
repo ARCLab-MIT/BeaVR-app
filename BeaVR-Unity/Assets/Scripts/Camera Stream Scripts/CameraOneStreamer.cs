@@ -25,9 +25,6 @@ public class CameraOneStreamer : MonoBehaviour
     [SerializeField] private int videoWidth = 640;
     [SerializeField] private int videoHeight = 360;
     [SerializeField] private bool autoConnectOnStart = true;
-    [Tooltip("Material for external WebRTC textures (e.g., Quest). Leave empty to auto-create with WebRTC/ExternalTexture shader.")]
-    [SerializeField] private Material externalVideoMaterial;
-
     private NetworkManager netConfig;
     private WebRTCSignalingClient signalingClient;
     private RTCPeerConnection peerConnection;
@@ -39,7 +36,6 @@ public class CameraOneStreamer : MonoBehaviour
     private Texture2D placeholderTexture;
     private SynchronizationContext unitySync;
     private static bool webRtcInitialized;
-    private Material runtimeVideoMaterial;
 
     private void Awake()
     {
@@ -51,24 +47,8 @@ public class CameraOneStreamer : MonoBehaviour
             webRtcInitialized = true;
         }
 
-        // Prepare a material that can sample external textures on Android/Quest
-        if (externalVideoMaterial != null)
-        {
-            runtimeVideoMaterial = externalVideoMaterial;
-        }
-        else
-        {
-            var shader = Shader.Find("WebRTC/ExternalTexture");
-            if (shader != null)
-            {
-                runtimeVideoMaterial = new Material(shader);
-                runtimeVideoMaterial.name = "RuntimeExternalVideoMaterial";
-            }
-            else
-            {
-                Debug.LogWarning("WebRTC/ExternalTexture shader not found; RawImage will use default UI material (may stay black on Quest).");
-            }
-        }
+        // For VP8 (software decoding), use Unity's default UI shader
+        // runtimeVideoMaterial remains null so Unity uses default material
     }
 
     private void Start()
@@ -297,11 +277,12 @@ public class CameraOneStreamer : MonoBehaviour
         currentTexture = texture;
         if (currentTexture != null)
         {
-            if (runtimeVideoMaterial != null)
-            {
-                image.material = runtimeVideoMaterial;
-            }
+            // For VP8 (software decoding), use Unity's default UI shader
+            // Explicitly set to null to ensure default material
+            image.material = null;
+
             image.texture = currentTexture;
+            image.color = Color.white; // Fix for VP8 transparency
             image.SetNativeSize();
             Debug.Log($"ApplyTexture: {currentTexture.width}x{currentTexture.height} ({currentTexture.GetType().Name})");
         }
@@ -336,11 +317,6 @@ public class CameraOneStreamer : MonoBehaviour
         {
             webRtcInitialized = false;
         }
-        if (runtimeVideoMaterial != null && externalVideoMaterial == null)
-        {
-            Destroy(runtimeVideoMaterial);
-            runtimeVideoMaterial = null;
-        }
     }
 
     private void OnApplicationQuit()
@@ -349,11 +325,6 @@ public class CameraOneStreamer : MonoBehaviour
         if (webRtcInitialized)
         {
             webRtcInitialized = false;
-        }
-        if (runtimeVideoMaterial != null && externalVideoMaterial == null)
-        {
-            Destroy(runtimeVideoMaterial);
-            runtimeVideoMaterial = null;
         }
     }
 
