@@ -209,6 +209,7 @@ MonoBehaviour:
   videoWidth: 640
   videoHeight: 480
   autoConnectOnStart: 1
+  externalVideoMaterial: {fileID: 0}
 --- !u!1 &40939087
 GameObject:
   m_ObjectHideFlags: 0
@@ -330,7 +331,7 @@ GameObject:
   m_Component:
   - component: {fileID: 65284394}
   - component: {fileID: 65284395}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: Port Display
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -396,7 +397,7 @@ GameObject:
   - component: {fileID: 90169684}
   - component: {fileID: 90169685}
   - component: {fileID: 90169686}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: Slider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -420,9 +421,9 @@ RectTransform:
   - {fileID: 1413082265}
   m_Father: {fileID: 1600812347}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 127.5, y: -5}
   m_SizeDelta: {x: 100, y: 10}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &90169685
@@ -519,7 +520,7 @@ GameObject:
   - component: {fileID: 113637718}
   - component: {fileID: 113637722}
   - component: {fileID: 113637723}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: Menu Button
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -985,13 +986,14 @@ GameObject:
   - component: {fileID: 191049807}
   - component: {fileID: 191049806}
   - component: {fileID: 191049805}
-  m_Layer: 5
+  - component: {fileID: 191049809}
+  m_Layer: 3
   m_Name: MainMenu
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &191049805
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1082,6 +1084,34 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 1.15}
   m_SizeDelta: {x: 200, y: 160}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &191049809
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 191049804}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ee10491ef6d5d1d49a270cf6b09bdc19, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Oculus.VR::OVROverlayCanvas
+  _enableMipmapping: 0
+  _dynamicResolution: 1
+  _redrawResolutionThreshold: 2147483647
+  rectTransform: {fileID: 191049808}
+  maxTextureSize: 2048
+  manualRedraw: 0
+  renderInterval: 1
+  renderIntervalFrameOffset: 0
+  expensive: 0
+  layer: 5
+  opacity: 2
+  shape: 0
+  curveRadius: 1
+  overlapMask: 0
+  overlayType: 1
+  _overlayEnabled: 1
 --- !u!1 &213152967
 GameObject:
   m_ObjectHideFlags: 0
@@ -1096,7 +1126,7 @@ GameObject:
   - component: {fileID: 213152969}
   - component: {fileID: 213152974}
   - component: {fileID: 213152973}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: StartButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1312,7 +1342,7 @@ GameObject:
   - component: {fileID: 250372041}
   - component: {fileID: 250372043}
   - component: {fileID: 250372042}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: Fill
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1334,7 +1364,7 @@ RectTransform:
   m_Father: {fileID: 734648789}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 0.4285714, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 10, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -1483,7 +1513,7 @@ GameObject:
   - component: {fileID: 284467748}
   - component: {fileID: 284467750}
   - component: {fileID: 284467749}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: Handle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1504,8 +1534,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1413082265}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMin: {x: 0.4285714, y: 0}
+  m_AnchorMax: {x: 0.4285714, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 10, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -2033,7 +2063,7 @@ GameObject:
   - component: {fileID: 505711269}
   - component: {fileID: 505711271}
   - component: {fileID: 505711270}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2171,7 +2201,7 @@ GameObject:
   - component: {fileID: 513381173}
   - component: {fileID: 513381175}
   - component: {fileID: 513381174}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: Background
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2278,7 +2308,7 @@ GameObject:
   - component: {fileID: 543011102}
   - component: {fileID: 543011101}
   - component: {fileID: 543011103}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: IP Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2741,7 +2771,7 @@ GameObject:
   - component: {fileID: 566981344}
   - component: {fileID: 566981343}
   - component: {fileID: 566981346}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: IPButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3222,7 +3252,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 734648789}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: Fill Area
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3960,7 +3990,8 @@ GameObject:
   - component: {fileID: 1038226539}
   - component: {fileID: 1038226538}
   - component: {fileID: 1038226537}
-  m_Layer: 5
+  - component: {fileID: 1038226541}
+  m_Layer: 3
   m_Name: MenuButtonCanvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4051,6 +4082,34 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: -4}
   m_SizeDelta: {x: 7, y: 3}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1038226541
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1038226536}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ee10491ef6d5d1d49a270cf6b09bdc19, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Oculus.VR::OVROverlayCanvas
+  _enableMipmapping: 0
+  _dynamicResolution: 1
+  _redrawResolutionThreshold: 2147483647
+  rectTransform: {fileID: 1038226540}
+  maxTextureSize: 2048
+  manualRedraw: 0
+  renderInterval: 1
+  renderIntervalFrameOffset: 0
+  expensive: 0
+  layer: 5
+  opacity: 2
+  shape: 0
+  curveRadius: 1
+  overlapMask: 0
+  overlayType: 1
+  _overlayEnabled: 1
 --- !u!1001 &1088783794
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4148,7 +4207,7 @@ GameObject:
   - component: {fileID: 1114040581}
   - component: {fileID: 1114040583}
   - component: {fileID: 1114040582}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4169,9 +4228,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1600812347}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 35, y: -5}
   m_SizeDelta: {x: 50, y: 10}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1114040582
@@ -4418,7 +4477,7 @@ GameObject:
   - component: {fileID: 1153538054}
   - component: {fileID: 1153538056}
   - component: {fileID: 1153538055}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5339,7 +5398,7 @@ GameObject:
   - component: {fileID: 1331393703}
   - component: {fileID: 1331393705}
   - component: {fileID: 1331393704}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: Graph Stream Port Text
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5360,9 +5419,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 65284394}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 75, y: -10}
   m_SizeDelta: {x: 150, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1331393704
@@ -5695,7 +5754,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1413082265}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: Handle Slide Area
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5733,7 +5792,7 @@ GameObject:
   - component: {fileID: 1413110629}
   - component: {fileID: 1413110631}
   - component: {fileID: 1413110630}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: Panel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6051,7 +6110,7 @@ GameObject:
   - component: {fileID: 1600812347}
   - component: {fileID: 1600812349}
   - component: {fileID: 1600812348}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: HandMultiplierSetting
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6298,7 +6357,7 @@ GameObject:
   - component: {fileID: 1702761589}
   - component: {fileID: 1702761591}
   - component: {fileID: 1702761590}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: Keypoint Port Text
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6319,9 +6378,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 65284394}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 75, y: -50}
   m_SizeDelta: {x: 150, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1702761590
@@ -6434,7 +6493,7 @@ GameObject:
   - component: {fileID: 1759358861}
   - component: {fileID: 1759358863}
   - component: {fileID: 1759358862}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: CamStream Port Text
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6455,9 +6514,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 65284394}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 75, y: -30}
   m_SizeDelta: {x: 150, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1759358862
@@ -6905,6 +6964,7 @@ MonoBehaviour:
   videoWidth: 640
   videoHeight: 480
   autoConnectOnStart: 1
+  externalVideoMaterial: {fileID: 0}
 --- !u!114 &1930241857
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7052,7 +7112,7 @@ GameObject:
   - component: {fileID: 2061247786}
   - component: {fileID: 2061247788}
   - component: {fileID: 2061247787}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
