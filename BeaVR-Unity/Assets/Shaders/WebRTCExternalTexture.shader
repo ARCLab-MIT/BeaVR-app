@@ -4,14 +4,75 @@ Shader "WebRTC/ExternalTexture"
     {
         _MainTex ("Texture", 2D) = "white" {}
     }
+
+    // ---------------------------------------------------------
+    // SubShader 1: Android / Quest (OES Hardware Decoding)
+    // ---------------------------------------------------------
     SubShader
     {
         Tags { "Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent" }
         LOD 100
-        
-        // No culling or depth write for simple UI/Video rendering
-        Cull Off
-        Lighting Off
+        ZWrite Off
+        Blend SrcAlpha OneMinusSrcAlpha
+
+        // Only run this SubShader on GLES3 (Android/Quest)
+        Pass
+        {
+            GLSLPROGRAM
+            #pragma only_renderers gles3
+
+            // OES Extensions must be at the very top
+            #extension GL_OES_EGL_image_external : require
+            #extension GL_OES_EGL_image_external_essl3 : enable
+
+            // Unity standard includes for GLSL
+            #include "UnityCG.glslinc"
+
+            #ifdef VERTEX
+            
+            // Raw GLSL Vertex Inputs
+            varying vec2 textureCoordinate;
+
+            void main()
+            {
+                // gl_MultiTexCoord0 is the standard generic attribute for UVs in Unity GLSL
+                textureCoordinate = gl_MultiTexCoord0.xy;
+                
+                // Flip Y for Android OES if needed (often required for WebRTC)
+                textureCoordinate.y = 1.0 - textureCoordinate.y;
+
+                // Standard vertex position transformation
+                gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+            }
+            
+            #endif
+
+            #ifdef FRAGMENT
+            
+            // The OES Sampler (Key Fix)
+            uniform samplerExternalOES _MainTex;
+            varying vec2 textureCoordinate;
+
+            void main()
+            {
+                // Must use generic texture2D or texture() depending on version, 
+                // but with samplerExternalOES defined, the driver handles it.
+                gl_FragColor = texture2D(_MainTex, textureCoordinate);
+            }
+            
+            #endif
+
+            ENDGLSL
+        }
+    }
+
+    // ---------------------------------------------------------
+    // SubShader 2: Editor / PC Fallback (Software Decoding)
+    // ---------------------------------------------------------
+    SubShader
+    {
+        Tags { "Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent" }
+        LOD 100
         ZWrite Off
         Blend SrcAlpha OneMinusSrcAlpha
 
@@ -20,19 +81,7 @@ Shader "WebRTC/ExternalTexture"
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
-            #pragma target 3.0
-
             #include "UnityCG.cginc"
-
-            // ---------------------------------------------------------
-            // ANDROID OES SUPPORT
-            // ---------------------------------------------------------
-            // We only use OES extension on Android. 
-            // In Editor, we fallback to standard 2D sampling.
-            #if defined(SHADER_API_GLES3) && !defined(UNITY_EDITOR)
-                #extension GL_OES_EGL_image_external : require
-                #extension GL_OES_EGL_image_external_essl3 : enable
-            #endif
 
             struct appdata
             {
@@ -46,44 +95,21 @@ Shader "WebRTC/ExternalTexture"
                 float4 vertex : SV_POSITION;
             };
 
-            // Define the texture and transform
-            // Note: We don't use sampler2D on Android for the OES texture
-            #if defined(SHADER_API_GLES3) && !defined(UNITY_EDITOR)
-                uniform samplerExternalOES _MainTex;
-            #else
-                sampler2D _MainTex;
-            #endif
-            
+            sampler2D _MainTex;
             float4 _MainTex_ST;
 
             v2f vert (appdata v)
             {
                 v2f o;
                 o.vertex = UnityObjectToClipPos(v.vertex);
-                // Apply texture scale/offset (Unity tiling)
                 o.uv = TRANSFORM_TEX(v.uv, _MainTex);
-                
-                // FLIP FIX: Android OES textures often come in upside down compared to Unity UI
-                #if defined(SHADER_API_GLES3) && !defined(UNITY_EDITOR)
-                    o.uv.y = 1.0 - o.uv.y;
-                #endif
-
                 return o;
             }
 
             fixed4 frag (v2f i) : SV_Target
             {
-                // Sample the texture based on platform
-                #if defined(SHADER_API_GLES3) && !defined(UNITY_EDITOR)
-                    float4 col = tex2D(_MainTex, i.uv); 
-                    // Note: In strict GLSL, this might look like texture(_MainTex, i.uv)
-                    // but Unity's HLSL compiler often maps tex2D to the correct intrinsic 
-                    // if the sampler is defined as samplerExternalOES.
-                #else
-                    float4 col = tex2D(_MainTex, i.uv);
-                #endif
-
-                return col;
+                // Standard 2D sampling for Editor
+                return tex2D(_MainTex, i.uv);
             }
             ENDCG
         }
