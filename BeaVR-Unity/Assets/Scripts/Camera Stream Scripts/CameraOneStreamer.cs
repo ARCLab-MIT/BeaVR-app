@@ -284,7 +284,14 @@ public class CameraOneStreamer : MonoBehaviour
             image.texture = currentTexture;
             image.color = Color.white; // Fix for VP8 transparency
             image.SetNativeSize();
+
+            // DEBUG: Check RawImage state
             Debug.Log($"ApplyTexture: {currentTexture.width}x{currentTexture.height} ({currentTexture.GetType().Name})");
+            Debug.Log($"RawImage state - enabled:{image.enabled}, active:{image.gameObject.activeInHierarchy}, color:{image.color}, material:{image.material?.name ?? "null"}");
+
+            // Force refresh by toggling
+            image.enabled = false;
+            image.enabled = true;
         }
     }
 
