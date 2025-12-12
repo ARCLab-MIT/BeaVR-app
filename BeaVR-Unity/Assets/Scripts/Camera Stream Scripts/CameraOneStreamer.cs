@@ -37,6 +37,7 @@ public class CameraOneStreamer : MonoBehaviour
     private SynchronizationContext unitySync;
     private static bool webRtcInitialized;
     private int frameCount = 0;
+    private float lastFrameTime = 0f;
 
     private void Awake()
     {
@@ -270,6 +271,7 @@ public class CameraOneStreamer : MonoBehaviour
     {
         if (texture == null) return;
         frameCount++;
+        lastFrameTime = Time.time; // Track when we received this frame
         Debug.Log($"HandleVideoReceived: Frame {frameCount} - {texture.width}x{texture.height}");
 
         // DEBUG: Check if texture has actual video data
@@ -300,6 +302,9 @@ public class CameraOneStreamer : MonoBehaviour
         currentTexture = texture;
         if (currentTexture != null)
         {
+            // KEEP ALIVE: Check WebRTC connection health
+            KeepAliveCheck();
+
             // DEBUG: Detailed texture analysis
             Debug.Log($"ApplyTexture: {currentTexture.width}x{currentTexture.height} ({currentTexture.GetType().Name})");
             Debug.Log($"Texture format: {currentTexture.graphicsFormat}, filter: {currentTexture.filterMode}, wrap: {currentTexture.wrapMode}");
@@ -331,6 +336,37 @@ public class CameraOneStreamer : MonoBehaviour
             {
                 UnityEngine.Canvas.ForceUpdateCanvases();
             }
+        }
+    }
+
+    private void KeepAliveCheck()
+    {
+        // Check if WebRTC connection is still healthy
+        if (peerConnection != null)
+        {
+            var state = peerConnection.ConnectionState;
+            Debug.Log($"KeepAlive: WebRTC connection state: {state}");
+
+            if (state == RTCPeerConnectionState.Disconnected ||
+                state == RTCPeerConnectionState.Failed ||
+                state == RTCPeerConnectionState.Closed)
+            {
+                Debug.LogWarning("KeepAlive: WebRTC connection lost, attempting reconnect...");
+                connectionEstablished = false;
+                isConnecting = false;
+                // Trigger reconnection
+                _ = EnsureConnectionAsync();
+            }
+        }
+
+        // Check if we've received frames recently (prevent frozen stream)
+        if (frameCount == 0)
+        {
+            Debug.LogWarning("KeepAlive: No frames received yet, connection may be slow");
+        }
+        else if (Time.time - lastFrameTime > 5.0f) // 5 second timeout
+        {
+            Debug.LogWarning($"KeepAlive: No frames for {Time.time - lastFrameTime:F1}s, possible stream freeze");
         }
     }
 
