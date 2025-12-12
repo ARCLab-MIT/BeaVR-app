@@ -25,7 +25,7 @@ public class CameraOneStreamer : MonoBehaviour
     [SerializeField] private int videoWidth = 640;
     [SerializeField] private int videoHeight = 360;
     [SerializeField] private bool autoConnectOnStart = true;
-    [Tooltip("Material for external WebRTC textures (e.g., Quest). Leave empty to auto-create with WebRTC/ExternalVideo shader.")]
+    [Tooltip("Material for external WebRTC textures (e.g., Quest). Leave empty to auto-create with WebRTC/ExternalTexture shader.")]
     [SerializeField] private Material externalVideoMaterial;
 
     private NetworkManager netConfig;
@@ -58,7 +58,7 @@ public class CameraOneStreamer : MonoBehaviour
         }
         else
         {
-            var shader = Shader.Find("WebRTC/ExternalVideo");
+            var shader = Shader.Find("WebRTC/ExternalTexture");
             if (shader != null)
             {
                 runtimeVideoMaterial = new Material(shader);
@@ -66,7 +66,7 @@ public class CameraOneStreamer : MonoBehaviour
             }
             else
             {
-                Debug.LogWarning("WebRTC/ExternalVideo shader not found; RawImage will use default UI material (may stay black on Quest).");
+                Debug.LogWarning("WebRTC/ExternalTexture shader not found; RawImage will use default UI material (may stay black on Quest).");
             }
         }
     }
