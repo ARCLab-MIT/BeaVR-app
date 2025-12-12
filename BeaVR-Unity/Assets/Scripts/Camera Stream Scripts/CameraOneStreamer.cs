@@ -289,6 +289,13 @@ public class CameraOneStreamer : MonoBehaviour
             Debug.Log($"ApplyTexture: {currentTexture.width}x{currentTexture.height} ({currentTexture.GetType().Name})");
             Debug.Log($"RawImage state - enabled:{image.enabled}, active:{image.gameObject.activeInHierarchy}, color:{image.color}, material:{image.material?.name ?? "null"}");
 
+            // FIX: Activate the GameObject if inactive
+            if (!image.gameObject.activeInHierarchy)
+            {
+                Debug.Log("Activating RawImage GameObject!");
+                image.gameObject.SetActive(true);
+            }
+
             // Force refresh by toggling
             image.enabled = false;
             image.enabled = true;
