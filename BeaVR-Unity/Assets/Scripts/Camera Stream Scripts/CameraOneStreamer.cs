@@ -36,6 +36,7 @@ public class CameraOneStreamer : MonoBehaviour
     private Texture2D placeholderTexture;
     private SynchronizationContext unitySync;
     private static bool webRtcInitialized;
+    private int frameCount = 0;
 
     private void Awake()
     {
@@ -268,7 +269,29 @@ public class CameraOneStreamer : MonoBehaviour
     private void HandleVideoReceived(Texture texture)
     {
         if (texture == null) return;
-        Debug.Log($"HandleVideoReceived: {texture.width}x{texture.height}");
+        frameCount++;
+        Debug.Log($"HandleVideoReceived: Frame {frameCount} - {texture.width}x{texture.height}");
+
+        // DEBUG: Check if texture has actual video data
+        if (texture is Texture2D tex2D)
+        {
+            try
+            {
+                Color[] pixels = tex2D.GetPixels(0, 0, 4, 4, 0); // Sample 4x4 pixels
+                Color avgColor = Color.black;
+                foreach (Color pixel in pixels)
+                {
+                    avgColor += pixel;
+                }
+                avgColor /= pixels.Length;
+                Debug.Log($"Texture sample - avg color: {avgColor}, has data: {!avgColor.Equals(Color.black) && !avgColor.Equals(Color.white)}");
+            }
+            catch (Exception e)
+            {
+                Debug.Log($"Could not sample texture: {e.Message}");
+            }
+        }
+
         unitySync.Post(_ => ApplyTexture(texture), null);
     }
 
@@ -277,6 +300,10 @@ public class CameraOneStreamer : MonoBehaviour
         currentTexture = texture;
         if (currentTexture != null)
         {
+            // DEBUG: Detailed texture analysis
+            Debug.Log($"ApplyTexture: {currentTexture.width}x{currentTexture.height} ({currentTexture.GetType().Name})");
+            Debug.Log($"Texture format: {currentTexture.graphicsFormat}, filter: {currentTexture.filterMode}, wrap: {currentTexture.wrapMode}");
+
             // For VP8 (software decoding), use Unity's default UI shader
             // Explicitly set to null to ensure default material
             image.material = null;
@@ -286,7 +313,6 @@ public class CameraOneStreamer : MonoBehaviour
             image.SetNativeSize();
 
             // DEBUG: Check RawImage state
-            Debug.Log($"ApplyTexture: {currentTexture.width}x{currentTexture.height} ({currentTexture.GetType().Name})");
             Debug.Log($"RawImage state - enabled:{image.enabled}, active:{image.gameObject.activeInHierarchy}, color:{image.color}, material:{image.material?.name ?? "null"}");
 
             // FIX: Activate the GameObject if inactive
@@ -299,6 +325,12 @@ public class CameraOneStreamer : MonoBehaviour
             // Force refresh by toggling
             image.enabled = false;
             image.enabled = true;
+
+            // Force Canvas update
+            if (image.canvas != null)
+            {
+                UnityEngine.Canvas.ForceUpdateCanvases();
+            }
         }
     }
 
