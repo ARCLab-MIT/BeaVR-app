@@ -15,7 +15,7 @@ using UnityEngine.UI;
 /// - webrtcClientId identifies this client to the Python server
 /// - webrtcVerboseLogs gates all Debug.Log noise for troubleshooting
 /// </summary>
-public class CameraOneStreamer : MonoBehaviour
+public class CameraOneStreamerWebRTC : MonoBehaviour
 {
     [Header("UI")]
     public RawImage image;
@@ -40,14 +40,14 @@ public class CameraOneStreamer : MonoBehaviour
     private float lastFrameTime = 0f;
     private RenderTexture displayRT; // Used to copy WebRTC texture for display
 
-    private static CameraOneStreamer _instance;
+    private static CameraOneStreamerWebRTC _instance;
 
     private void Awake()
     {
         // Singleton pattern: prevent duplicate instances
         if (_instance != null && _instance != this)
         {
-            Debug.LogError($"Multiple CameraOneStreamer instances detected! Destroying duplicate on {gameObject.name}.");
+            Debug.LogError($"Multiple CameraOneStreamerWebRTC instances detected! Destroying duplicate on {gameObject.name}.");
             Destroy(this);
             return;
         }
@@ -90,11 +90,11 @@ public class CameraOneStreamer : MonoBehaviour
             _ = EnsureConnectionAsync();
         }
 
-        // DIAGNOSTIC: Count all CameraOneStreamer instances in the scene
-        var allStreamers = FindObjectsOfType<CameraOneStreamer>();
-        Debug.Log($"DIAGNOSTIC: Found {allStreamers.Length} CameraOneStreamer instance(s) in scene. This instance ID: {GetInstanceID()}");
+        // DIAGNOSTIC: Count all CameraOneStreamerWebRTC instances in the scene
+        var allStreamers = FindObjectsOfType<CameraOneStreamerWebRTC>();
+        Debug.Log($"DIAGNOSTIC: Found {allStreamers.Length} CameraOneStreamerWebRTC instance(s) in scene. This instance ID: {GetInstanceID()}");
         
-        Debug.Log($"CameraOneStreamer start: webrtcVerboseLogs={netConfig != null && netConfig.IsWebRTCVerbose()}");
+        Debug.Log($"CameraOneStreamerWebRTC start: webrtcVerboseLogs={netConfig != null && netConfig.IsWebRTCVerbose()}");
     }
 
     private void Update()
