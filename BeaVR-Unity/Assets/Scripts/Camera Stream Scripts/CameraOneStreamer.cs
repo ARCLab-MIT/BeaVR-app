@@ -335,7 +335,7 @@ public class CameraOneStreamer : MonoBehaviour
             image.material = null;
 
             image.texture = currentTexture;
-            image.color = Color.red; // Fix for VP8 transparency
+            image.color = Color.white; // Fix for VP8 transparency
             image.SetNativeSize();
 
             // DEBUG: Check RawImage state
