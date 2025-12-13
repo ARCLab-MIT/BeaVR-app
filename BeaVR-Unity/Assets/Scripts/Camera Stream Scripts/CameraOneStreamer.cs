@@ -94,6 +94,11 @@ public class CameraOneStreamer : MonoBehaviour
             return;
         }
 
+        if (connectionEstablished)
+        {
+            KeepAliveCheck();
+        }
+
         if (autoConnectOnStart && !connectionEstablished && !isConnecting)
         {
             _ = EnsureConnectionAsync();
@@ -303,7 +308,7 @@ public class CameraOneStreamer : MonoBehaviour
         if (currentTexture != null)
         {
             // KEEP ALIVE: Check WebRTC connection health
-            KeepAliveCheck();
+            // KeepAliveCheck(); // Moved to Update() to catch stalls when frames stop arriving
 
             // DEBUG: Detailed texture analysis
             Debug.Log($"ApplyTexture: {currentTexture.width}x{currentTexture.height} ({currentTexture.GetType().Name})");
