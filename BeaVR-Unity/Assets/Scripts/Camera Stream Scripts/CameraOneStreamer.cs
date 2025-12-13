@@ -38,6 +38,7 @@ public class CameraOneStreamer : MonoBehaviour
     private static bool webRtcInitialized;
     private int frameCount = 0;
     private float lastFrameTime = 0f;
+    private RenderTexture displayRT; // Used to copy WebRTC texture for display
 
     private static CameraOneStreamer _instance;
 
@@ -121,30 +122,37 @@ public class CameraOneStreamer : MonoBehaviour
         {
             KeepAliveCheck();
             
-            // Force texture refresh every frame (WebRTC auto-update may not work on Quest)
-            // This mimics the old NetMQ pattern where we actively updated the texture in Update()
+            // Force texture copy every frame - WebRTC texture auto-update doesn't work on Quest
+            // We use Graphics.Blit to copy from the WebRTC GPU texture to a RenderTexture
             if (currentVideoTrack != null && currentVideoTrack.Texture != null)
             {
-                image.texture = currentVideoTrack.Texture;
+                var srcTex = currentVideoTrack.Texture;
                 
-                // DIAGNOSTIC: Check texture content (sample pixels to see if there's actual video data)
-                if (Time.frameCount % 180 == 0) // Every ~3 seconds
+                // Create or resize the display RenderTexture
+                if (displayRT == null || displayRT.width != srcTex.width || displayRT.height != srcTex.height)
                 {
-                    var tex = currentVideoTrack.Texture;
-                    var ptr = tex.GetNativeTexturePtr();
-                    Debug.Log($"TEXTURE_PTR: {ptr} - dimensions: {tex.width}x{tex.height}, format: {tex.graphicsFormat}");
-                    
-                    // Try to read texture content by copying to a temporary RenderTexture
+                    if (displayRT != null) displayRT.Release();
+                    displayRT = new RenderTexture(srcTex.width, srcTex.height, 0, RenderTextureFormat.ARGB32);
+                    displayRT.Create();
+                    Debug.Log($"Created display RenderTexture: {srcTex.width}x{srcTex.height}");
+                }
+                
+                // Copy from WebRTC texture to our RenderTexture every frame
+                Graphics.Blit(srcTex, displayRT);
+                
+                // Assign the RenderTexture to the UI (not the original WebRTC texture)
+                image.texture = displayRT;
+                
+                // DIAGNOSTIC: Sample pixels every ~3 seconds
+                if (Time.frameCount % 180 == 0)
+                {
                     try
                     {
-                        RenderTexture tempRT = RenderTexture.GetTemporary(tex.width, tex.height, 0, RenderTextureFormat.ARGB32);
-                        Graphics.Blit(tex, tempRT);
-                        
                         RenderTexture previous = RenderTexture.active;
-                        RenderTexture.active = tempRT;
+                        RenderTexture.active = displayRT;
                         
                         Texture2D readTex = new Texture2D(4, 4, TextureFormat.ARGB32, false);
-                        readTex.ReadPixels(new Rect(tex.width/2 - 2, tex.height/2 - 2, 4, 4), 0, 0); // Read center 4x4
+                        readTex.ReadPixels(new Rect(srcTex.width/2 - 2, srcTex.height/2 - 2, 4, 4), 0, 0);
                         readTex.Apply();
                         
                         Color[] pixels = readTex.GetPixels();
@@ -155,7 +163,6 @@ public class CameraOneStreamer : MonoBehaviour
                         Debug.Log($"TEXTURE_SAMPLE: Center color = R:{avgColor.r:F2} G:{avgColor.g:F2} B:{avgColor.b:F2} A:{avgColor.a:F2}");
                         
                         RenderTexture.active = previous;
-                        RenderTexture.ReleaseTemporary(tempRT);
                         Destroy(readTex);
                     }
                     catch (System.Exception e)
@@ -459,6 +466,13 @@ public class CameraOneStreamer : MonoBehaviour
             currentVideoTrack = null;
         }
         currentTexture = null;
+        
+        // Clean up the display RenderTexture
+        if (displayRT != null)
+        {
+            displayRT.Release();
+            displayRT = null;
+        }
     }
 
     private void CleanupPeer()
