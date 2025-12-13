@@ -108,6 +108,13 @@ public class CameraOneStreamer : MonoBehaviour
         if (connectionEstablished)
         {
             KeepAliveCheck();
+            
+            // Force texture refresh every frame (WebRTC auto-update may not work on Quest)
+            // This mimics the old NetMQ pattern where we actively updated the texture in Update()
+            if (currentVideoTrack != null && currentVideoTrack.Texture != null)
+            {
+                image.texture = currentVideoTrack.Texture;
+            }
         }
 
         if (autoConnectOnStart && !connectionEstablished && !isConnecting)
