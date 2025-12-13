@@ -14,6 +14,7 @@ public class CameraOneStreamer : MonoBehaviour
     private static List<byte[]> imageList;
 
     public RawImage image;
+    public GameObject imageContainer;  // Reference to CamOneRawImage GameObject
     private Texture2D texture;
 
     //public NetworkConfigs netConf;
@@ -21,6 +22,11 @@ public class CameraOneStreamer : MonoBehaviour
     private string communicationAddress;
     private NetworkManager netConfig;
     private SubscriberSocket socket;
+
+    // Message reception tracking
+    private DateTime lastMessageTime;
+    private bool isReceivingMessages = false;
+    private float messageTimeout = 5.0f; // seconds without messages before deactivating
 
     private void StartImageThread()
     {
@@ -78,13 +84,17 @@ public class CameraOneStreamer : MonoBehaviour
             {
                 // Exit thread if socket is null or Component is disabled
                 if (socket == null || !enabled) break;
-                
+
                 byte[] imageBytes = socket.ReceiveFrameBytes();
-                
+
+                // Update message reception tracking
+                lastMessageTime = DateTime.Now;
+                isReceivingMessages = true;
+
                 if (imageList != null)
                 {
                     imageList.Add(imageBytes);
-                    
+
                     if (imageList.Count > 5)
                     {
                         imageList.RemoveAt(0);
@@ -99,6 +109,7 @@ public class CameraOneStreamer : MonoBehaviour
         catch (Exception e)
         {
             Debug.LogError("Camera thread error: " + e.Message);
+            isReceivingMessages = false;
         }
     }
 
@@ -116,13 +127,39 @@ public class CameraOneStreamer : MonoBehaviour
             return;
         }
 
+        // Auto-assign imageContainer if not set in Unity Editor
+        if (imageContainer == null && image != null)
+        {
+            imageContainer = image.gameObject;
+            Debug.Log($"CameraOneStreamer: Auto-assigned imageContainer to {imageContainer.name}");
+        }
+
         // Initializing the image texture
         texture = new Texture2D(640, 360, TextureFormat.RGB24, false);
         image.texture = texture;
+        
+        // Ensure the image starts inactive until messages are received
+        if (imageContainer != null)
+        {
+            imageContainer.SetActive(false);
+        }
     }
 
     public void Update()
     {
+        // Check if we're still receiving messages within timeout
+        if (isReceivingMessages && (DateTime.Now - lastMessageTime).TotalSeconds > messageTimeout)
+        {
+            isReceivingMessages = false;
+            Debug.Log("Camera stream timeout - no messages received");
+        }
+
+        // Control visibility based on actual message reception
+        if (imageContainer != null)
+        {
+            imageContainer.SetActive(isReceivingMessages);
+        }
+
         if (connectionEstablished)
         {
             // Check if network manager is forcing disconnect
@@ -131,7 +168,7 @@ public class CameraOneStreamer : MonoBehaviour
                 DisconnectNetMQ();
                 return;
             }
-            
+
             // To check if the same IP is being used
             if (String.Equals(communicationAddress, netConfig.getCamAddress()))
             {
@@ -188,7 +225,7 @@ public class CameraOneStreamer : MonoBehaviour
                 Debug.LogError("Error stopping camera thread: " + e.Message);
             }
         }
-        
+
         // Close socket
         if (socket != null)
         {
@@ -203,8 +240,9 @@ public class CameraOneStreamer : MonoBehaviour
                 Debug.LogError("Error closing camera socket: " + e.Message);
             }
         }
-        
+
         connectionEstablished = false;
+        isReceivingMessages = false;
         Debug.Log("Camera connection closed");
     }
 
