@@ -126,6 +126,14 @@ public class CameraOneStreamer : MonoBehaviour
             if (currentVideoTrack != null && currentVideoTrack.Texture != null)
             {
                 image.texture = currentVideoTrack.Texture;
+                
+                // DIAGNOSTIC: Check if texture native pointer changes (indicates new frame data)
+                if (Time.frameCount % 60 == 0)
+                {
+                    var tex = currentVideoTrack.Texture;
+                    var ptr = tex.GetNativeTexturePtr();
+                    Debug.Log($"TEXTURE_PTR: {ptr} - dimensions: {tex.width}x{tex.height}, format: {tex.graphicsFormat}");
+                }
             }
         }
 
@@ -385,7 +393,9 @@ public class CameraOneStreamer : MonoBehaviour
         if (peerConnection != null)
         {
             var state = peerConnection.ConnectionState;
-            Debug.Log($"KeepAlive: WebRTC connection state: {state}");
+            
+            // Only log state changes, not every frame (reduce noise)
+            // Debug.Log($"KeepAlive: WebRTC connection state: {state}");
 
             if (state == RTCPeerConnectionState.Disconnected ||
                 state == RTCPeerConnectionState.Failed ||
@@ -397,23 +407,18 @@ public class CameraOneStreamer : MonoBehaviour
                 // Trigger reconnection
                 _ = EnsureConnectionAsync();
             }
-            // NEW: If we are stuck on Frame 1 for more than 3 second, disconnect and retry.
-            if (frameCount == 1 && Time.time - lastFrameTime > 3.0f)
-            {
-                Debug.LogError("STALL DETECTED: Stuck on Frame 1! Forcing restart...");
-                DisconnectNetMQ(); // Kill the connection
-                // The Update() loop's autoConnectOnStart logic will restart it automatically
-            }
+            
+            // REMOVED: The stall detection based on frameCount==1 was WRONG!
+            // OnVideoReceived only fires ONCE (on texture resize), so frameCount
+            // will always be 1 even when video is streaming normally.
+            // The texture updates in-place without triggering callbacks.
         }
 
         // Check if we've received frames recently (prevent frozen stream)
-        if (frameCount == 0)
+        // Note: This only checks the initial frame arrival, not ongoing frames
+        if (frameCount == 0 && Time.frameCount % 60 == 0) // Only log occasionally
         {
             Debug.LogWarning("KeepAlive: No frames received yet, connection may be slow");
-        }
-        else if (Time.time - lastFrameTime > 5.0f) // 5 second timeout
-        {
-            Debug.LogWarning($"KeepAlive: No frames for {Time.time - lastFrameTime:F1}s, possible stream freeze");
         }
     }
 
