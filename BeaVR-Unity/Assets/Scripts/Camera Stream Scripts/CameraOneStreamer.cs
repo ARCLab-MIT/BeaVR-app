@@ -314,7 +314,7 @@ public class CameraOneStreamer : MonoBehaviour
             image.material = null;
 
             image.texture = currentTexture;
-            image.color = Color.white; // Fix for VP8 transparency
+            image.color = Color.red; // Fix for VP8 transparency
             image.SetNativeSize();
 
             // DEBUG: Check RawImage state
@@ -356,6 +356,13 @@ public class CameraOneStreamer : MonoBehaviour
                 isConnecting = false;
                 // Trigger reconnection
                 _ = EnsureConnectionAsync();
+            }
+            // NEW: If we are stuck on Frame 1 for more than 1 second, disconnect and retry.
+            if (frameCount == 1 && Time.time - lastFrameTime > 1.0f)
+            {
+                Debug.LogError("STALL DETECTED: Stuck on Frame 1! Forcing restart...");
+                DisconnectNetMQ(); // Kill the connection
+                // The Update() loop's autoConnectOnStart logic will restart it automatically
             }
         }
 
