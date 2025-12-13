@@ -27,6 +27,10 @@ public class CameraOneStreamer : MonoBehaviour
     private DateTime lastMessageTime;
     private bool isReceivingMessages = false;
     private float messageTimeout = 5.0f; // seconds without messages before deactivating
+    
+    // Connection retry handling
+    private float nextRetryTime = 0f;
+    private float retryDelay = 2.0f;
 
     private void StartImageThread()
     {
@@ -38,10 +42,12 @@ public class CameraOneStreamer : MonoBehaviour
             
             if (AddressAvailable && !netConfig.ForceDisconnect)
             {
-                StartConnection();
-                imageList = new List<byte[]>();
-                imageStreamer = new Thread(getRobotImage);
-                imageStreamer.Start();
+                if (StartConnection())
+                {
+                    imageList = new List<byte[]>();
+                    imageStreamer = new Thread(getRobotImage);
+                    imageStreamer.Start();
+                }
             }
         }
         catch (Exception e)
@@ -50,7 +56,7 @@ public class CameraOneStreamer : MonoBehaviour
         }
     }
 
-    public void StartConnection()
+    public bool StartConnection()
     {
         try
         {
@@ -68,11 +74,13 @@ public class CameraOneStreamer : MonoBehaviour
             socket.Subscribe("");
             connectionEstablished = true;
             Debug.Log("Camera connection established to: " + communicationAddress);
+            return true;
         }
         catch (Exception e)
         {
             Debug.LogError("Error establishing camera connection: " + e.Message);
             connectionEstablished = false;
+            return false;
         }
     }
 
@@ -137,12 +145,6 @@ public class CameraOneStreamer : MonoBehaviour
         // Initializing the image texture
         texture = new Texture2D(640, 360, TextureFormat.RGB24, false);
         image.texture = texture;
-        
-        // Ensure the image starts inactive until messages are received
-        if (imageContainer != null)
-        {
-            imageContainer.SetActive(false);
-        }
     }
 
     public void Update()
@@ -151,13 +153,6 @@ public class CameraOneStreamer : MonoBehaviour
         if (isReceivingMessages && (DateTime.Now - lastMessageTime).TotalSeconds > messageTimeout)
         {
             isReceivingMessages = false;
-            Debug.Log("Camera stream timeout - no messages received");
-        }
-
-        // Control visibility based on actual message reception
-        if (imageContainer != null)
-        {
-            imageContainer.SetActive(isReceivingMessages);
         }
 
         if (connectionEstablished)
@@ -195,7 +190,12 @@ public class CameraOneStreamer : MonoBehaviour
         }
         else if (!netConfig.ForceDisconnect)
         {
-            StartImageThread();
+            // Only retry periodically
+            if (Time.time >= nextRetryTime)
+            {
+                nextRetryTime = Time.time + retryDelay;
+                StartImageThread();
+            }
         }
     }
     
