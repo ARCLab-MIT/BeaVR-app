@@ -112,6 +112,7 @@ public class CameraOneStreamer : MonoBehaviour
 
     public void DisconnectNetMQ()
     {
+        Debug.LogError($"DisconnectNetMQ called! Stack: {Environment.StackTrace}");
         connectionCts?.Cancel();
         connectionCts = null;
         isConnecting = false;
