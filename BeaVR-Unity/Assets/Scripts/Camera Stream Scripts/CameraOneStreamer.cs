@@ -39,8 +39,19 @@ public class CameraOneStreamer : MonoBehaviour
     private int frameCount = 0;
     private float lastFrameTime = 0f;
 
+    private static CameraOneStreamer _instance;
+
     private void Awake()
     {
+        // Singleton pattern: prevent duplicate instances
+        if (_instance != null && _instance != this)
+        {
+            Debug.LogError($"Multiple CameraOneStreamer instances detected! Destroying duplicate on {gameObject.name}.");
+            Destroy(this);
+            return;
+        }
+        _instance = this;
+
         // Explicitly initialize WebRTC; prefer software path when available to run on Quest without GPU decode.
         // Use reflection so the code compiles against older/newer com.unity.webrtc versions that may not expose EncoderType/Dispose.
         if (!webRtcInitialized)
@@ -412,9 +423,15 @@ public class CameraOneStreamer : MonoBehaviour
     private void OnDestroy()
     {
         DisconnectNetMQ();
-        if (webRtcInitialized)
+        
+        // Only clear global state if this is the singleton instance
+        if (_instance == this)
         {
-            webRtcInitialized = false;
+            _instance = null;
+            if (webRtcInitialized)
+            {
+                webRtcInitialized = false;
+            }
         }
     }
 
