@@ -89,6 +89,10 @@ public class CameraOneStreamer : MonoBehaviour
             _ = EnsureConnectionAsync();
         }
 
+        // DIAGNOSTIC: Count all CameraOneStreamer instances in the scene
+        var allStreamers = FindObjectsOfType<CameraOneStreamer>();
+        Debug.Log($"DIAGNOSTIC: Found {allStreamers.Length} CameraOneStreamer instance(s) in scene. This instance ID: {GetInstanceID()}");
+        
         Debug.Log($"CameraOneStreamer start: webrtcVerboseLogs={netConfig != null && netConfig.IsWebRTCVerbose()}");
     }
 
@@ -98,6 +102,14 @@ public class CameraOneStreamer : MonoBehaviour
 
         if (netConfig == null)
             return;
+        
+        // DIAGNOSTIC: Periodically log video track state (every 60 frames ~= 1 second)
+        if (Time.frameCount % 60 == 0)
+        {
+            bool hasTrack = currentVideoTrack != null;
+            bool hasTexture = hasTrack && currentVideoTrack.Texture != null;
+            Debug.Log($"DIAGNOSTIC: Frame {Time.frameCount} - connectionEstablished:{connectionEstablished}, hasTrack:{hasTrack}, hasTexture:{hasTexture}, frameCount:{frameCount}");
+        }
 
         if (netConfig.ForceDisconnect)
         {
