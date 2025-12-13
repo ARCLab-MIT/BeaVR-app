@@ -116,6 +116,8 @@ public class CameraOneStreamer : MonoBehaviour
         connectionCts = null;
         isConnecting = false;
         connectionEstablished = false;
+        frameCount = 0;
+        lastFrameTime = 0f;
 
         CleanupPeer();
 
