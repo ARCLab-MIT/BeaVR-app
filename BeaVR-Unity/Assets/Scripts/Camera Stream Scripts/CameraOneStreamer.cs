@@ -127,12 +127,41 @@ public class CameraOneStreamer : MonoBehaviour
             {
                 image.texture = currentVideoTrack.Texture;
                 
-                // DIAGNOSTIC: Check if texture native pointer changes (indicates new frame data)
-                if (Time.frameCount % 60 == 0)
+                // DIAGNOSTIC: Check texture content (sample pixels to see if there's actual video data)
+                if (Time.frameCount % 180 == 0) // Every ~3 seconds
                 {
                     var tex = currentVideoTrack.Texture;
                     var ptr = tex.GetNativeTexturePtr();
                     Debug.Log($"TEXTURE_PTR: {ptr} - dimensions: {tex.width}x{tex.height}, format: {tex.graphicsFormat}");
+                    
+                    // Try to read texture content by copying to a temporary RenderTexture
+                    try
+                    {
+                        RenderTexture tempRT = RenderTexture.GetTemporary(tex.width, tex.height, 0, RenderTextureFormat.ARGB32);
+                        Graphics.Blit(tex, tempRT);
+                        
+                        RenderTexture previous = RenderTexture.active;
+                        RenderTexture.active = tempRT;
+                        
+                        Texture2D readTex = new Texture2D(4, 4, TextureFormat.ARGB32, false);
+                        readTex.ReadPixels(new Rect(tex.width/2 - 2, tex.height/2 - 2, 4, 4), 0, 0); // Read center 4x4
+                        readTex.Apply();
+                        
+                        Color[] pixels = readTex.GetPixels();
+                        Color avgColor = Color.black;
+                        foreach (var p in pixels) avgColor += p;
+                        avgColor /= pixels.Length;
+                        
+                        Debug.Log($"TEXTURE_SAMPLE: Center color = R:{avgColor.r:F2} G:{avgColor.g:F2} B:{avgColor.b:F2} A:{avgColor.a:F2}");
+                        
+                        RenderTexture.active = previous;
+                        RenderTexture.ReleaseTemporary(tempRT);
+                        Destroy(readTex);
+                    }
+                    catch (System.Exception e)
+                    {
+                        Debug.LogWarning($"Could not sample texture: {e.Message}");
+                    }
                 }
             }
         }
