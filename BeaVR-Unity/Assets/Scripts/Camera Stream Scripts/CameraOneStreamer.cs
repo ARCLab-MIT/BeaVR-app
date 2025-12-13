@@ -112,7 +112,7 @@ public class CameraOneStreamer : MonoBehaviour
 
     public void DisconnectNetMQ()
     {
-        Debug.LogError($"DisconnectNetMQ called! Stack: {Environment.StackTrace}");
+        // Debug.LogError($"DisconnectNetMQ called! Stack: {Environment.StackTrace}");
         connectionCts?.Cancel();
         connectionCts = null;
         isConnecting = false;
@@ -283,6 +283,7 @@ public class CameraOneStreamer : MonoBehaviour
         Debug.Log($"HandleVideoReceived: Frame {frameCount} - {texture.width}x{texture.height}");
 
         // DEBUG: Check if texture has actual video data
+        /*
         if (texture is Texture2D tex2D)
         {
             try
@@ -301,6 +302,7 @@ public class CameraOneStreamer : MonoBehaviour
                 Debug.Log($"Could not sample texture: {e.Message}");
             }
         }
+        */
 
         unitySync.Post(_ => ApplyTexture(texture), null);
     }
@@ -365,8 +367,8 @@ public class CameraOneStreamer : MonoBehaviour
                 // Trigger reconnection
                 _ = EnsureConnectionAsync();
             }
-            // NEW: If we are stuck on Frame 1 for more than 1 second, disconnect and retry.
-            if (frameCount == 1 && Time.time - lastFrameTime > 1.0f)
+            // NEW: If we are stuck on Frame 1 for more than 3 second, disconnect and retry.
+            if (frameCount == 1 && Time.time - lastFrameTime > 3.0f)
             {
                 Debug.LogError("STALL DETECTED: Stuck on Frame 1! Forcing restart...");
                 DisconnectNetMQ(); // Kill the connection
