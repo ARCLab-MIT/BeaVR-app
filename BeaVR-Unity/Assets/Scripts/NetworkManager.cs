@@ -105,14 +105,6 @@ public class NetworkManager : MonoBehaviour
         return netConfig != null && netConfig.webrtcVerboseLogs;
     }
 
-    public string getResolutionAddress()
-    {
-        if (IPNotFound)
-            return "tcp://:";
-        else
-            return "tcp://" + netConfig.IPAddress + ":" + netConfig.resolutionPortNum;
-    }
-
     public string getPauseAddress()
     {
         if (IPNotFound)

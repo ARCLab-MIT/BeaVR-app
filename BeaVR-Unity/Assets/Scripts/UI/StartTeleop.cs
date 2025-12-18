@@ -36,7 +36,6 @@ public class StartTeleopButton : MonoBehaviour
             ip,
             networkManager.getRightKeypointAddress(),
             networkManager.getLeftKeypointAddress(),
-            networkManager.getResolutionAddress(),
             networkManager.getPauseAddress()
         );
 

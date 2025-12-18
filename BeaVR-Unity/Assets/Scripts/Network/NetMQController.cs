@@ -35,7 +35,6 @@ public class NetMQController : MonoBehaviour
     private string ipAddress;
     private string rightKeypointPort;
     private string leftKeypointPort;
-    private string resolutionPort;
     private string pausePort;
     
     // Initialization flags
@@ -85,7 +84,6 @@ public class NetMQController : MonoBehaviour
             // Store configuration values (ports only). IP will come from PlayerPrefs.
             rightKeypointPort = configJson.rightkeyptPortNum;
             leftKeypointPort = configJson.leftkeyptPortNum;
-            resolutionPort = configJson.resolutionPortNum;
             pausePort = configJson.PausePortNum;
             
             Debug.Log("NetMQController: Network ports loaded from JSON");
@@ -186,10 +184,6 @@ public class NetMQController : MonoBehaviour
             // Create left hand socket
             string leftHandAddress = $"tcp://{ipAddress}:{leftKeypointPort}";
             CreateSocket("LeftHand", leftHandAddress);
-            
-            // Create resolution socket
-            string resolutionAddress = $"tcp://{ipAddress}:{resolutionPort}";
-            CreateSocket("Resolution", resolutionAddress);
             
             // Create pause socket
             string pauseAddress = $"tcp://{ipAddress}:{pausePort}";
@@ -475,8 +469,7 @@ public class NetMQController : MonoBehaviour
     /// <summary>
     /// Connect to all sockets using provided configuration
     /// </summary>
-    public void Connect(string ipAddress, string rightHandAddress, string leftHandAddress, 
-                       string resolutionAddress, string pauseAddress)
+    public void Connect(string ipAddress, string rightHandAddress, string leftHandAddress, string pauseAddress)
     {
         // Store the IP address
         this.ipAddress = ipAddress;
@@ -496,9 +489,6 @@ public class NetMQController : MonoBehaviour
         
         if (!string.IsNullOrEmpty(leftHandAddress) && leftHandAddress != "tcp://:")
             CreateSocket("LeftHand", leftHandAddress);
-        
-        if (!string.IsNullOrEmpty(resolutionAddress) && resolutionAddress != "tcp://:")
-            CreateSocket("Resolution", resolutionAddress);
         
         if (!string.IsNullOrEmpty(pauseAddress) && pauseAddress != "tcp://:")
             CreateSocket("Pause", pauseAddress);
@@ -551,9 +541,6 @@ public class NetMQController : MonoBehaviour
                     break;
                 case "LeftHand":
                     address = $"tcp://{ipAddress}:{leftKeypointPort}";
-                    break;
-                case "Resolution":
-                    address = $"tcp://{ipAddress}:{resolutionPort}";
                     break;
                 case "Pause":
                     address = $"tcp://{ipAddress}:{pausePort}";

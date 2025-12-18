@@ -13,7 +13,7 @@ public struct VRInput : IFlatbufferObject
 {
   private Table __p;
   public ByteBuffer ByteBuffer { get { return __p.bb; } }
-  public static void ValidateVersion() { FlatBufferConstants.FLATBUFFERS_25_9_23(); }
+  public static void ValidateVersion() { FlatBufferConstants.FLATBUFFERS_24_12_23(); }
   public static VRInput GetRootAsVRInput(ByteBuffer _bb) { return GetRootAsVRInput(_bb, new VRInput()); }
   public static VRInput GetRootAsVRInput(ByteBuffer _bb, VRInput obj) { return (obj.__assign(_bb.GetInt(_bb.Position) + _bb.Position, _bb)); }
   public static bool VerifyVRInput(ByteBuffer _bb) {Google.FlatBuffers.Verifier verifier = new Google.FlatBuffers.Verifier(_bb); return verifier.VerifyBuffer("", false, VRInputVerify.Verify); }

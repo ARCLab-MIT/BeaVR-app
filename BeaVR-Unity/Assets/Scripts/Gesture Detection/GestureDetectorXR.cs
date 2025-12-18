@@ -41,7 +41,6 @@ public class GestureDetectorXR : MonoBehaviour
 	// Modes
 	bool StreamRelativeData = true;
 	bool StreamAbsoluteData = false;
-	bool StreamResolution = false;
 	private bool ShouldContinueArmTeleop = false;
 
 	// Joint order definition (26 joints)
@@ -122,8 +121,8 @@ public class GestureDetectorXR : MonoBehaviour
 		// Create vector of floats directly from the flat array
 		var keypointsVector = VRInput.CreateKeypointsVectorBlock(fbb, flatData);
 
-		// Determine mode
-		IsRelative isRelative = (mode == "relative") ? IsRelative.Relative : IsRelative.Absolute;
+		// Determine mode (using lowercase enum values from schema)
+		IsRelative isRelative = (mode == "relative") ? IsRelative.relative : IsRelative.absolute;
 
 		// Build table
 		VRInput.StartVRInput(fbb);
@@ -170,8 +169,6 @@ public class GestureDetectorXR : MonoBehaviour
 		// Process gestures (left hand pinches)
 		StreamPauser();
 
-		// Send auxiliary channels
-		SendResolutionThroughController();
 		SendPauseStatusThroughController();
 
 		// Send hand data
@@ -191,7 +188,6 @@ public class GestureDetectorXR : MonoBehaviour
 			netConfig.netConfig.IPAddress,
 			netConfig.getRightKeypointAddress(),
 			netConfig.getLeftKeypointAddress(),
-			netConfig.getResolutionAddress(),
 			netConfig.getPauseAddress()
 		);
 
@@ -286,14 +282,14 @@ public class GestureDetectorXR : MonoBehaviour
 			// Gather shared state
 			Command currentCmd = GetCurrentCommand();
 
-			// Right hand
+			// Right hand (using lowercase enum value from schema)
 			CollectHandJointPositions(_handSubsystem.rightHand, _rightHandData);
-			byte[] rightHandBytes = SerializeVRInput(_rightHandData, HandSide.Right, typeMarker, currentCmd);
+			byte[] rightHandBytes = SerializeVRInput(_rightHandData, HandSide.right, typeMarker, currentCmd);
 			NetMQController.Instance.SendMessage("RightHand", rightHandBytes);
 
-			// Left hand
+			// Left hand (using lowercase enum value from schema)
 			CollectHandJointPositions(_handSubsystem.leftHand, _leftHandData);
-			byte[] leftHandBytes = SerializeVRInput(_leftHandData, HandSide.Left, typeMarker, currentCmd);
+			byte[] leftHandBytes = SerializeVRInput(_leftHandData, HandSide.left, typeMarker, currentCmd);
 			NetMQController.Instance.SendMessage("LeftHand", leftHandBytes);
 
 			// Throttled on-device log so you can verify what we're sending via adb
@@ -386,8 +382,9 @@ public class GestureDetectorXR : MonoBehaviour
 	// Helpers for VRInput mappings
 	Command GetCurrentCommand()
 	{
-		// If "High" meant Resume/Active (ShouldContinueArmTeleop = true), then maps to Command.Move
-		return ShouldContinueArmTeleop ? Command.Move : Command.Stop;
+		// If "High" meant Resume/Active (ShouldContinueArmTeleop = true), then maps to Command.resume
+		// Using lowercase enum values from schema: resume, pause, reset, home
+		return ShouldContinueArmTeleop ? Command.resume : Command.pause;
 	}
 
 	public void ToggleMenuButton(bool toggle)
@@ -408,7 +405,6 @@ public class GestureDetectorXR : MonoBehaviour
 		try
 		{
 			string normalized = (mode ?? "relative").ToLowerInvariant();
-			StreamResolution = false;
 			if (normalized == "absolute")
 			{
 				StreamRelativeData = false;
