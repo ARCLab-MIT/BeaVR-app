@@ -22,10 +22,6 @@ enum HandSide:ubyte {
   bimanual = 2
 }
 
-// TODO: Resolution is not descriptive enough, we need to add more descriptive names.
-// Resolution is supposed to scale the relative motion of the robot.
-enum Resolution:ubyte { Low = 0, High = 1 }
-
 enum IsRelative:ubyte {
   relative = 0,
   absolute = 1
@@ -36,7 +32,6 @@ table VRInput {
   hand_side: HandSide;
   is_relative: IsRelative;
   command: Command;
-  resolution: Resolution;
 }
 
 root_type VRInput;

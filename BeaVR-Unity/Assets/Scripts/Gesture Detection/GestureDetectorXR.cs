@@ -121,7 +121,7 @@ public class GestureDetectorXR : MonoBehaviour
 	private float[] _rightHandData = new float[26 * 3];
 	private float[] _leftHandData = new float[26 * 3];
 
-	public static byte[] SerializeVRInput(float[] flatData, HandSide side, string mode, Command cmd, Resolution res)
+	public static byte[] SerializeVRInput(float[] flatData, HandSide side, string mode, Command cmd)
 	{
 		FlatBufferBuilder fbb = new FlatBufferBuilder(1024);
 
@@ -136,7 +136,6 @@ public class GestureDetectorXR : MonoBehaviour
 		VRInput.AddHandSide(fbb, side);
 		VRInput.AddIsRelative(fbb, isRelative);
 		VRInput.AddCommand(fbb, cmd);
-		VRInput.AddResolution(fbb, res);
 		VRInput.AddKeypoints(fbb, keypointsVector);
 		var endOffset = VRInput.EndVRInput(fbb);
 
@@ -299,16 +298,15 @@ public class GestureDetectorXR : MonoBehaviour
 
 			// Gather shared state
 			Command currentCmd = GetCurrentCommand();
-			Resolution currentRes = GetCurrentResolution();
 
 			// Right hand
 			CollectHandJointPositions(_handSubsystem.rightHand, _rightHandData);
-			byte[] rightHandBytes = SerializeVRInput(_rightHandData, HandSide.Right, typeMarker, currentCmd, currentRes);
+			byte[] rightHandBytes = SerializeVRInput(_rightHandData, HandSide.Right, typeMarker, currentCmd);
 			NetMQController.Instance.SendMessage("RightHand", rightHandBytes);
 
 			// Left hand
 			CollectHandJointPositions(_handSubsystem.leftHand, _leftHandData);
-			byte[] leftHandBytes = SerializeVRInput(_leftHandData, HandSide.Left, typeMarker, currentCmd, currentRes);
+			byte[] leftHandBytes = SerializeVRInput(_leftHandData, HandSide.Left, typeMarker, currentCmd);
 			NetMQController.Instance.SendMessage("LeftHand", leftHandBytes);
 
 			// Throttled on-device log so you can verify what we're sending via adb
@@ -420,15 +418,6 @@ public class GestureDetectorXR : MonoBehaviour
 	{
 		// If "High" meant Resume/Active (ShouldContinueArmTeleop = true), then maps to Command.Move
 		return ShouldContinueArmTeleop ? Command.Move : Command.Stop;
-	}
-
-	Resolution GetCurrentResolution()
-	{
-		if (HighResolutionButtonController != null && HighResolutionButtonController.HighResolution)
-			return Resolution.High;
-		if (LowResolutionButtonController != null && LowResolutionButtonController.LowResolution)
-			return Resolution.Low;
-		return Resolution.None;
 	}
 
 	public void ToggleMenuButton(bool toggle)
