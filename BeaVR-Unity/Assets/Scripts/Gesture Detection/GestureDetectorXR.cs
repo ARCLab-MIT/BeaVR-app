@@ -349,12 +349,8 @@ public class GestureDetectorXR : MonoBehaviour
 				outPositions[offset + 1] = p.y;
 				outPositions[offset + 2] = p.z;
 			}
-			else
-			{
-				outPositions[offset] = 0f;
-				outPositions[offset + 1] = 0f;
-				outPositions[offset + 2] = 0f;
-			}
+			// Removing the else block effectively implements "Last Known Position"
+			// because the array persists between frames and we simply don't overwrite the old data.
 		}
 	}
 
