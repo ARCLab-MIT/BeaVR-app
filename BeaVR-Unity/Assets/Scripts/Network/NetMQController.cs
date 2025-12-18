@@ -266,6 +266,69 @@ public class NetMQController : MonoBehaviour
             return false;
         }
     }
+
+    /// <summary>
+    /// Send a byte array message through a named socket with timeout protection
+    /// </summary>
+    public bool SendMessage(string socketName, byte[] message)
+    {
+        try
+        {
+            if (!sockets.ContainsKey(socketName))
+            {
+                return false;
+            }
+
+            var socket = sockets[socketName];
+            if (socket == null)
+            {
+                return false;
+            }
+
+            // Add timeout protection
+            bool sent = socket.TrySendFrame(TimeSpan.FromMilliseconds(10), message);
+            
+            if (!sent)
+            {
+                // If send times out, mark this socket as potentially disconnected
+                socketFailCounts[socketName] = socketFailCounts.GetValueOrDefault(socketName, 0) + 1;
+                
+                // If we've failed multiple times, try to reconnect this socket
+                if (socketFailCounts[socketName] > 5)
+                {
+                    Debug.LogWarning($"Socket {socketName} has failed multiple times. Attempting reconnection...");
+                    ReconnectSocket(socketName);
+                    socketFailCounts[socketName] = 0;
+                }
+                return false;
+            }
+            
+            // Reset fail count on success
+            socketFailCounts[socketName] = 0;
+            
+            // Occasional logging
+            if (Time.time - lastLogTime > 1.0f)
+            {
+                lastLogTime = Time.time;
+                Debug.Log($"NetMQController: Sent message to '{socketName}'");
+            }
+
+            return true;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"NetMQController: Error sending message to '{socketName}' - {e.Message}");
+            socketFailCounts[socketName] = socketFailCounts.GetValueOrDefault(socketName, 0) + 1;
+            
+            // If exception keeps happening, try to reconnect
+            if (socketFailCounts[socketName] > 3)
+            {
+                ReconnectSocket(socketName);
+                socketFailCounts[socketName] = 0;
+            }
+            return false;
+        }
+    }
     
     /// <summary>
     /// Close all sockets

@@ -8,6 +8,8 @@ using UnityEngine.XR;
 using UnityEngine.XR.Hands;
 using UnityEngine.XR.Management;
 using Unity.XR.CoreUtils;
+using Google.FlatBuffers;
+using BEAVRApp;
 
 public class GestureDetectorXR : MonoBehaviour
 {
@@ -115,16 +117,34 @@ public class GestureDetectorXR : MonoBehaviour
 		}
 	}
 
-	public static string SerializeVector3List(List<Vector3> gestureData)
+	public static byte[] SerializeHandData(List<Vector3> gestureData, string mode)
 	{
-		string vectorString = "";
-		foreach (Vector3 vec in gestureData)
-			vectorString = vectorString + vec.x + "," + vec.y + "," + vec.z + "|";
+		FlatBufferBuilder fbb = new FlatBufferBuilder(1024);
 
-		if (vectorString.Length > 0)
-			vectorString = vectorString.Substring(0, vectorString.Length - 1) + ":";
+		// Flatten the vector list (x, y, z)
+		float[] flatData = new float[gestureData.Count * 3];
+		for (int i = 0; i < gestureData.Count; i++)
+		{
+			flatData[i * 3] = gestureData[i].x;
+			flatData[i * 3 + 1] = gestureData[i].y;
+			flatData[i * 3 + 2] = gestureData[i].z;
+		}
 
-		return vectorString;
+		// Create vector of floats
+		var keypointsVector = HandData.CreateKeypointsVectorBlock(fbb, flatData);
+
+		// Determine mode
+		TrackingMode trackingMode = (mode == "relative") ? TrackingMode.Relative : TrackingMode.Absolute;
+
+		// Build table
+		HandData.StartHandData(fbb);
+		HandData.AddMode(fbb, trackingMode);
+		HandData.AddKeypoints(fbb, keypointsVector);
+		var endOffset = HandData.EndHandData(fbb);
+
+		HandData.FinishHandDataBuffer(fbb, endOffset);
+
+		return fbb.SizedByteArray();
 	}
 
     void Update()
@@ -282,16 +302,14 @@ public class GestureDetectorXR : MonoBehaviour
 			// Right hand
 			List<Vector3> rightHandGestureData = new List<Vector3>();
 			CollectHandJointPositions(_handSubsystem.rightHand, rightHandGestureData);
-			string rightHandDataString = SerializeVector3List(rightHandGestureData);
-			rightHandDataString = typeMarker + ":" + rightHandDataString;
-			NetMQController.Instance.SendMessage("RightHand", rightHandDataString);
+			byte[] rightHandBytes = SerializeHandData(rightHandGestureData, typeMarker);
+			NetMQController.Instance.SendMessage("RightHand", rightHandBytes);
 
 			// Left hand
 			List<Vector3> leftHandGestureData = new List<Vector3>();
 			CollectHandJointPositions(_handSubsystem.leftHand, leftHandGestureData);
-			string leftHandDataString = SerializeVector3List(leftHandGestureData);
-			leftHandDataString = typeMarker + ":" + leftHandDataString;
-			NetMQController.Instance.SendMessage("LeftHand", leftHandDataString);
+			byte[] leftHandBytes = SerializeHandData(leftHandGestureData, typeMarker);
+			NetMQController.Instance.SendMessage("LeftHand", leftHandBytes);
 
 			// Throttled on-device log so you can verify what we're sending via adb
 			if (EnableKeypointLogging)
@@ -309,7 +327,7 @@ public class GestureDetectorXR : MonoBehaviour
 					Vector3 rSample = rTotal > 0 ? rightHandGestureData[sampleIndex] : Vector3.zero;
 					Vector3 lSample = lTotal > 0 ? leftHandGestureData[sampleIndex] : Vector3.zero;
 					Debug.Log(
-						$"GestureDetectorXR: sent {typeMarker} | RH joints={rTotal} tracked={rTracked} sample={FormatVec(rSample)} | LH joints={lTotal} tracked={lTracked} sample={FormatVec(lSample)}");
+						$"GestureDetectorXR: sent {typeMarker} (FlatBuffers) | RH joints={rTotal} tracked={rTracked} bytes={rightHandBytes.Length} | LH joints={lTotal} tracked={lTracked} bytes={leftHandBytes.Length}");
 					_lastKeypointLogTime = Time.time;
 					_lastRightTrackedCount = rTracked;
 					_lastLeftTrackedCount = lTracked;

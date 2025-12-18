@@ -1,0 +1,10 @@
+namespace BEAVRApp;
+
+enum TrackingMode : byte { Absolute = 0, Relative = 1 }
+
+table HandData {
+  mode: TrackingMode;
+  keypoints: [float];
+}
+
+root_type HandData;
