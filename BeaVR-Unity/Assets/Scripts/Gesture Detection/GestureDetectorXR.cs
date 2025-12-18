@@ -337,12 +337,6 @@ public class GestureDetectorXR : MonoBehaviour
 				outPositions[offset + 1] = p.y;
 				outPositions[offset + 2] = p.z;
 			}
-			else
-			{
-				outPositions[offset] = 0f;
-				outPositions[offset + 1] = 0f;
-				outPositions[offset + 2] = 0f;
-			}
 		}
 	}
 
