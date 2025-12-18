@@ -1,10 +1,42 @@
 namespace BEAVRApp;
 
-enum TrackingMode : byte { Absolute = 0, Relative = 1 }
+// --------------------VR schemas-------------------- //
 
-table HandData {
-  mode: TrackingMode;
-  keypoints: [float];
+// Keypoints are the 26 keypoints of the hand derived from the Oculus VR detector.
+// Each keypoint is a 3D point in space (x, y, z).
+// This is the meat of the VR input.
+
+// This controls the teleop state, so we can stop or resume
+// data flow or send generic commands to the robot.
+enum Command:ubyte {
+  resume = 0,
+  pause = 1,
+  reset = 2,
+  home  = 3
 }
 
-root_type HandData;
+// Helpful when your robot has lateralities.
+enum HandSide:ubyte {
+  right = 0,
+  left = 1,
+  bimanual = 2
+}
+
+// TODO: Resolution is not descriptive enough, we need to add more descriptive names.
+// Resolution is supposed to scale the relative motion of the robot.
+enum Resolution:ubyte { Low = 0, High = 1 }
+
+enum IsRelative:ubyte {
+  relative = 0,
+  absolute = 1
+}
+
+table VRInput {
+  keypoints: [float]; // 26 keypoints * 3 coordinates each
+  hand_side: HandSide;
+  is_relative: IsRelative;
+  command: Command;
+  resolution: Resolution;
+}
+
+root_type VRInput;
