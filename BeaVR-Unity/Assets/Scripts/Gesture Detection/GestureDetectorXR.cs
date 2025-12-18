@@ -117,20 +117,15 @@ public class GestureDetectorXR : MonoBehaviour
 		}
 	}
 
-	public static byte[] SerializeHandData(List<Vector3> gestureData, string mode)
+	// Pre-allocated arrays for hand data (26 joints * 3 coordinates)
+	private float[] _rightHandData = new float[26 * 3];
+	private float[] _leftHandData = new float[26 * 3];
+
+	public static byte[] SerializeHandData(float[] flatData, string mode)
 	{
 		FlatBufferBuilder fbb = new FlatBufferBuilder(1024);
 
-		// Flatten the vector list (x, y, z)
-		float[] flatData = new float[gestureData.Count * 3];
-		for (int i = 0; i < gestureData.Count; i++)
-		{
-			flatData[i * 3] = gestureData[i].x;
-			flatData[i * 3 + 1] = gestureData[i].y;
-			flatData[i * 3 + 2] = gestureData[i].z;
-		}
-
-		// Create vector of floats
+		// Create vector of floats directly from the flat array
 		var keypointsVector = HandData.CreateKeypointsVectorBlock(fbb, flatData);
 
 		// Determine mode
@@ -300,32 +295,31 @@ public class GestureDetectorXR : MonoBehaviour
 				return;
 
 			// Right hand
-			List<Vector3> rightHandGestureData = new List<Vector3>();
-			CollectHandJointPositions(_handSubsystem.rightHand, rightHandGestureData);
-			byte[] rightHandBytes = SerializeHandData(rightHandGestureData, typeMarker);
+			CollectHandJointPositions(_handSubsystem.rightHand, _rightHandData);
+			byte[] rightHandBytes = SerializeHandData(_rightHandData, typeMarker);
 			NetMQController.Instance.SendMessage("RightHand", rightHandBytes);
 
 			// Left hand
-			List<Vector3> leftHandGestureData = new List<Vector3>();
-			CollectHandJointPositions(_handSubsystem.leftHand, leftHandGestureData);
-			byte[] leftHandBytes = SerializeHandData(leftHandGestureData, typeMarker);
+			CollectHandJointPositions(_handSubsystem.leftHand, _leftHandData);
+			byte[] leftHandBytes = SerializeHandData(_leftHandData, typeMarker);
 			NetMQController.Instance.SendMessage("LeftHand", leftHandBytes);
 
 			// Throttled on-device log so you can verify what we're sending via adb
 			if (EnableKeypointLogging)
 			{
-				int rTotal = rightHandGestureData.Count;
-				int lTotal = leftHandGestureData.Count;
-				int rTracked = CountNonZeroJoints(rightHandGestureData);
-				int lTracked = CountNonZeroJoints(leftHandGestureData);
+				int rTotal = k_JointOrder.Length;
+				int lTotal = k_JointOrder.Length;
+				int rTracked = CountNonZeroJoints(_rightHandData);
+				int lTracked = CountNonZeroJoints(_leftHandData);
 				bool countsChanged = rTracked != _lastRightTrackedCount || lTracked != _lastLeftTrackedCount;
 				bool modeChanged = _lastModeLogged != typeMarker;
 				bool intervalElapsed = Time.time - _lastKeypointLogTime > Mathf.Max(0.1f, KeypointLogIntervalSeconds);
 				if (countsChanged || modeChanged || intervalElapsed)
 				{
-					int sampleIndex = Mathf.Min(10, Mathf.Max(0, rTotal - 1)); // prefer IndexTip if available
-					Vector3 rSample = rTotal > 0 ? rightHandGestureData[sampleIndex] : Vector3.zero;
-					Vector3 lSample = lTotal > 0 ? leftHandGestureData[sampleIndex] : Vector3.zero;
+					// Simple sampling for log (index tip is roughly index 10 in our 26-joint list? No, 26 joints. 
+					// IndexTip is k_JointOrder[10]. So offset 10*3 = 30.)
+					int tipIdx = 10 * 3; 
+					Vector3 rSample = new Vector3(_rightHandData[tipIdx], _rightHandData[tipIdx+1], _rightHandData[tipIdx+2]);
 					Debug.Log(
 						$"GestureDetectorXR: sent {typeMarker} (FlatBuffers) | RH joints={rTotal} tracked={rTracked} bytes={rightHandBytes.Length} | LH joints={lTotal} tracked={lTracked} bytes={leftHandBytes.Length}");
 					_lastKeypointLogTime = Time.time;
@@ -341,29 +335,38 @@ public class GestureDetectorXR : MonoBehaviour
 		}
 	}
 
-	void CollectHandJointPositions(XRHand hand, List<Vector3> outPositions)
+	void CollectHandJointPositions(XRHand hand, float[] outPositions)
 	{
-		outPositions.Clear();
+		// 26 joints * 3 floats each
 		for (int i = 0; i < k_JointOrder.Length; i++)
 		{
 			var joint = hand.GetJoint(k_JointOrder[i]);
+			int offset = i * 3;
 			if (joint.TryGetPose(out Pose pose))
 			{
-				outPositions.Add(ToWorldPosition(pose.position));
+				Vector3 p = ToWorldPosition(pose.position);
+				outPositions[offset] = p.x;
+				outPositions[offset + 1] = p.y;
+				outPositions[offset + 2] = p.z;
 			}
 			else
 			{
-				outPositions.Add(Vector3.zero);
+				outPositions[offset] = 0f;
+				outPositions[offset + 1] = 0f;
+				outPositions[offset + 2] = 0f;
 			}
 		}
 	}
 
-	int CountNonZeroJoints(List<Vector3> positions)
+	int CountNonZeroJoints(float[] positions)
 	{
 		int count = 0;
-		for (int i = 0; i < positions.Count; i++)
+		// Iterate by 3s
+		for (int i = 0; i < positions.Length; i += 3)
 		{
-			if (positions[i] != Vector3.zero) count++;
+			// if any component is non-zero, we count it as tracked
+			if (positions[i] != 0f || positions[i + 1] != 0f || positions[i + 2] != 0f)
+				count++;
 		}
 		return count;
 	}
