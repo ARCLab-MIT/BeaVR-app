@@ -31,14 +31,8 @@ public class GestureDetectorXR : MonoBehaviour
 
 	// UI and helpers (kept to match original behavior)
 	public GameObject MenuButton;
-	public GameObject ResolutionButton;
-	public GameObject HighResolutionButton;
-	public GameObject LowResolutionButton;
 	// WristTracker visual removed
 	public RawImage StreamBorder;
-
-	public HighResolutionButtonController HighResolutionButtonController;
-	public LowResolutionButtonController LowResolutionButtonController;
 
 	// Networking
 	private NetworkManager netConfig;
@@ -184,17 +178,10 @@ public class GestureDetectorXR : MonoBehaviour
 		if (StreamAbsoluteData)
 		{
 			SendHandDataThroughController("absolute");
-			ToggleResolutionButton(false);
 		}
 		else if (StreamRelativeData)
 		{
 			SendHandDataThroughController("relative");
-			ToggleResolutionButton(false);
-		}
-		else if (StreamResolution)
-		{
-			ToggleHighResolutionButton(true);
-			ToggleLowResolutionButton(true);
 		}
 	}
 
@@ -377,27 +364,6 @@ public class GestureDetectorXR : MonoBehaviour
 		return $"({v.x:F3},{v.y:F3},{v.z:F3})";
 	}
 
-	void SendResolutionThroughController()
-	{
-		try
-		{
-			string state = "None";
-			if (HighResolutionButtonController != null && HighResolutionButtonController.HighResolution)
-			{
-				state = "High";
-			}
-			else if (LowResolutionButtonController != null && LowResolutionButtonController.LowResolution)
-			{
-				state = "Low";
-			}
-			NetMQController.Instance.SendMessage("Resolution", state);
-		}
-		catch (Exception e)
-		{
-			Debug.LogError("Error sending resolution data: " + e.Message);
-		}
-	}
-
 	void SendPauseStatusThroughController()
 	{
 		try
@@ -431,29 +397,6 @@ public class GestureDetectorXR : MonoBehaviour
 		{
 			Debug.LogError("Error in ToggleMenuButton: " + e.Message);
 		}
-	}
-
-	public void ToggleResolutionButton(bool toggle)
-	{
-		try
-		{
-			if (ResolutionButton != null)
-				ResolutionButton.SetActive(toggle);
-		}
-		catch (Exception e)
-		{
-			Debug.LogError("Error in ToggleResolutionButton: " + e.Message);
-		}
-	}
-
-	public void ToggleHighResolutionButton(bool toggle)
-	{
-		Debug.Log("HighResolutionButton toggle (XR): " + toggle);
-	}
-
-	public void ToggleLowResolutionButton(bool toggle)
-	{
-		Debug.Log("LowResolutionButton toggle (XR): " + toggle);
 	}
 
 	public void ActivateStreaming(string mode = "relative")
